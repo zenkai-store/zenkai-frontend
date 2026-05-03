@@ -466,9 +466,9 @@ const AboutProduct = () => {
 
       {/* ======================= MAIN PRODUCT SECTION ======================= */}
       <main className="max-w-[1400px] mx-auto px-6 md:px-12 lg:px-20 py-8 md:py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-16">
           {/* ======================= LEFT - IMAGE GALLERY ======================= */}
-          <div className="space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {/* Main Image Container */}
             <div
               className={`relative bg-gray-50 rounded-2xl overflow-hidden border border-gray-100 group ${
@@ -504,7 +504,7 @@ const AboutProduct = () => {
               {/* Main Image */}
               {currentImage ? (
                 <div
-                  className="w-full aspect-square overflow-hidden"
+                  className="w-full aspect-[4/3] overflow-hidden"
                   style={
                     isZoomed
                       ? {
@@ -525,7 +525,7 @@ const AboutProduct = () => {
                   />
                 </div>
               ) : (
-                <div className="w-full aspect-square flex items-center justify-center">
+                <div className="w-full aspect-[4/3] flex items-center justify-center">
                   <Package className="w-20 h-20 text-gray-300" />
                 </div>
               )}
@@ -581,7 +581,7 @@ const AboutProduct = () => {
           </div>
 
           {/* ======================= RIGHT - PRODUCT INFO ======================= */}
-          <div className="space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             {/* Product Name & Brand */}
             <div>
               <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
