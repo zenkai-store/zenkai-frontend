@@ -81,27 +81,34 @@ const CategoryProducts = () => {
 
   // ======================= CHECK USER AUTH (NOT ADMIN) =======================
   useEffect(() => {
-    const checkUserAuth = () => {
-      const storedData = getStoredUserData();
-      const userData = getUserData();
+    const checkUserAuth = async () => {
+      try {
+        const response = await fetch(`${BASEURL}/api/auth/me`, {
+          credentials: "include",
+        });
 
-      // Check if user is logged in and is NOT an admin
-      if (
-        (storedData || userData) &&
-        storedData?.role !== "admin" &&
-        userData?.role !== "admin" &&
-        userData?.user?.role !== "admin"
-      ) {
+        if (!response.ok) {
+          setIsUserLoggedIn(false);
+          setUserName("");
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.user?.role === "admin") {
+          setIsUserLoggedIn(false);
+          setUserName("");
+          return;
+        }
+
         setIsUserLoggedIn(true);
-        setUserName(
-          storedData?.name || userData?.name || userData?.user?.name || "User",
-        );
-      } else {
-        // Either not logged in OR logged in as admin
+        setUserName(data.user?.name || "User");
+      } catch (error) {
         setIsUserLoggedIn(false);
         setUserName("");
       }
     };
+
     checkUserAuth();
   }, []);
 
@@ -335,20 +342,19 @@ const CategoryProducts = () => {
   // ======================= LOGOUT =======================
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${BASEURL}/api/auth/logout`, {
+      await fetch(`${BASEURL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
-
-      if (response.ok) {
-        setIsUserLoggedIn(false);
-        setUserName("");
-        navigate("/");
-      }
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      localStorage.clear();
+      sessionStorage.clear();
+
       setIsUserLoggedIn(false);
       setUserName("");
+
       navigate("/");
     }
   };
@@ -906,7 +912,7 @@ const CategoryProducts = () => {
         {!isUserLoggedIn && products.length > 0 && (
           <div className="mt-16 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8 border border-gray-200 text-center">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-              <User size={28} className="text-gray-500" />
+              <ShoppingCart size={28} className="text-gray-500" />
             </div>
             <h4 className="text-xl font-bold text-gray-900 mb-2">
               Ready to Shop?
@@ -915,12 +921,19 @@ const CategoryProducts = () => {
               Login as a user to add products to your cart, save to wishlist,
               and enjoy a seamless shopping experience.
             </p>
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 bg-red-500 text-white px-8 py-3.5 rounded-full hover:bg-red-600 transition font-medium shadow-lg shadow-red-500/25"
-            >
-              Login to Start Shopping
-            </Link>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-2 bg-red-500 text-white px-8 py-3.5 rounded-full hover:bg-red-600 transition font-medium shadow-lg shadow-red-500/25"
+              >
+                <User size={18} />
+                Login to Start Shopping
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs mt-4">
+              Admins cannot add products to cart. Please use a regular user
+              account.
+            </p>
           </div>
         )}
       </main>
@@ -1075,13 +1088,13 @@ const Navbar = ({
 
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100">
               <div className="py-2">
-                <button className="w-full px-4 py-2 text-left text-white hover:bg-gray-50 transition text-sm">
+                <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition text-sm">
                   My Profile
                 </button>
-                <button className="w-full px-4 py-2 text-left text-white hover:bg-gray-50 transition text-sm">
+                <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition text-sm">
                   Orders
                 </button>
-                <button className="w-full px-4 py-2 text-left text-white hover:bg-gray-50 transition text-sm">
+                <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 transition text-sm">
                   Wishlist
                 </button>
                 <hr className="my-1" />

@@ -80,15 +80,17 @@ const AboutProduct = () => {
 
   // ======================= CHECK AUTH =======================
   useEffect(() => {
-    const checkAuth = () => {
-      const storedData = getStoredUserData();
-      const userData = getUserData();
-      if (storedData || userData) {
+    const checkAuth = async () => {
+      const storedUser = getStoredUserData();
+
+      if (storedUser && storedUser.role !== "admin") {
         setIsLoggedIn(true);
-      } else {
-        setIsLoggedIn(false);
+        return;
       }
+
+      setIsLoggedIn(false);
     };
+
     checkAuth();
   }, []);
 
@@ -763,23 +765,31 @@ const AboutProduct = () => {
                   </button>
                 </>
               ) : (
-                <div className="w-full bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 text-center">
-                  <div className="w-14 h-14 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <ShoppingCart size={24} className="text-gray-500" />
+                <div className="w-full bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gray-200 text-gray-500 font-semibold text-lg cursor-not-allowed">
+                      <ShoppingCart size={22} />
+                      Add to Cart
+                    </div>
+                    <div className="flex-1 flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-gray-200 text-gray-500 font-semibold text-lg cursor-not-allowed">
+                      <Zap size={22} />
+                      Buy Now
+                    </div>
                   </div>
-                  <h4 className="text-gray-900 font-semibold mb-2">
-                    Login to Place Order
-                  </h4>
-                  <p className="text-gray-500 text-sm mb-4">
-                    You need to be logged in to add products to cart and place
-                    orders.
-                  </p>
-                  <Link
-                    to="/login"
-                    className="inline-flex items-center gap-2 bg-red-500 text-white px-8 py-3 rounded-full hover:bg-red-600 transition font-medium shadow-lg shadow-red-500/25"
-                  >
-                    Login Now
-                  </Link>
+                  <div className="text-center mt-4">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <ShoppingCart size={18} className="text-gray-500" />
+                    </div>
+                    <p className="text-gray-500 text-sm mb-3">
+                      Please login as a user to add products to cart
+                    </p>
+                    <Link
+                      to="/login"
+                      className="inline-flex items-center gap-2 bg-red-500 text-white px-6 py-2.5 rounded-full hover:bg-red-600 transition font-medium shadow-lg shadow-red-500/25"
+                    >
+                      Login to Shop
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
