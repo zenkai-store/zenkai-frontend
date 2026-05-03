@@ -375,22 +375,22 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
   // Logout function
   const handleLogout = async () => {
     try {
-      const response = await fetch(`${BASEURL}/api/auth/logout`, {
+      await fetch(`${BASEURL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
-
-      if (response.ok) {
-        setLoggedIn(false);
-        setIsLoggedIn(false);
-        setUserName("");
-        navigate("/");
-      }
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      // Always clean frontend state
+      localStorage.removeItem("userData");
+      localStorage.removeItem("zenkai_user_data");
+      sessionStorage.removeItem("userData");
+
       setLoggedIn(false);
       setIsLoggedIn(false);
       setUserName("");
+
       navigate("/");
     }
   };
