@@ -948,7 +948,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
                       className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 group cursor-pointer border border-gray-100"
                     >
                       {/* Product Image */}
-                      <div className="relative h-64 overflow-hidden bg-gray-50">
+                      <div className="relative h-56 lg:h-48 xl:h-44 overflow-hidden bg-gray-50">
                         {product.image ? (
                           <img
                             src={product.image}
