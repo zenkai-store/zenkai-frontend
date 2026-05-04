@@ -8,6 +8,8 @@ import {
   getStoredUserData,
 } from "../../utils/auth";
 
+import Reviews from "./Reviews";
+
 // Import placeholder image for loading/error states
 import Logo from "../../assets/logo.png";
 
@@ -993,6 +995,9 @@ const AboutProduct = () => {
             </div>
           </div>
         </div>
+
+        {/* ======================= REVIEWS SECTION ======================= */}
+        <Reviews productId={product._id} />
       </main>
     </div>
   );
