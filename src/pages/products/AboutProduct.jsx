@@ -9,6 +9,7 @@ import {
 } from "../../utils/auth";
 
 import Reviews from "./Reviews";
+import RecommendProducts from "./RecommendProducts";
 
 // Import placeholder image for loading/error states
 import Logo from "../../assets/logo.png";
@@ -998,6 +999,9 @@ const AboutProduct = () => {
 
         {/* ======================= REVIEWS SECTION ======================= */}
         <Reviews productId={product._id} />
+
+        {/* ======================= RECOMMENDED PRODUCTS SECTION ======================= */}
+        <RecommendProducts productId={product._id} />
       </main>
     </div>
   );
