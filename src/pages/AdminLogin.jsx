@@ -28,7 +28,7 @@ const AdminLogin = () => {
     }
 
     try {
-      const response = await fetch("/api/admin/login", {
+      const response = await fetch(ADMIN_LOGIN_URL, {
         method: "POST",
         credentials: "include",
         headers: {
