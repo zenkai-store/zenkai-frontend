@@ -1,3 +1,8 @@
-const BASEURL = "http://localhost:5000";
+// Baseurl.js
 
-export default BASEURL;
+const BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://zenkai-backend.onrender.com/";
+
+export default BASE_URL;
