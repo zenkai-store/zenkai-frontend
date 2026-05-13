@@ -4,6 +4,14 @@ import axios from "axios";
 import BASEURL from "../../config/baseURL";
 
 import {
+  getCachedUserData,
+  setCachedUserData,
+  getUserData,
+  getStoredUserData,
+  setStoredUserData,
+} from "../../utils/auth";
+
+import {
   Search,
   X,
   ChevronLeft,
@@ -52,6 +60,8 @@ const ListProducts = () => {
   const searchInputRef = useRef(null);
   const topRef = useRef(null);
 
+  const isInitialMount = useRef(true);
+
   // ======================= STATES =======================
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -85,7 +95,44 @@ const ListProducts = () => {
   // Filter panel (mobile)
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
+  const [loggedIn, setLoggedIn] = useState(false);
+
   const PRODUCTS_PER_PAGE = 20;
+
+  // Check auth status and update wishlist from products
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch(`${BASEURL}/api/auth/me`, {
+          credentials: "include",
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setCachedUserData(data.user);
+          setStoredUserData(data.user);
+          setLoggedIn(true);
+          return true;
+        } else {
+          setLoggedIn(false);
+          return false;
+        }
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setLoggedIn(false);
+        return false;
+      }
+    };
+
+    // Check stored data first for instant login state
+    const storedData = getStoredUserData();
+    if (storedData) {
+      setLoggedIn(true);
+    }
+
+    // Always verify with backend
+    checkAuth();
+  }, []);
 
   // ======================= FETCH PRODUCTS =======================
   const fetchProducts = useCallback(async () => {
@@ -100,14 +147,14 @@ const ListProducts = () => {
         setIsSearching(true);
         response = await axios.get(
           `${BASEURL}/api/products/search?q=${encodeURIComponent(debouncedSearchQuery)}&page=${currentPage}&limit=${PRODUCTS_PER_PAGE}`,
-          { withCredentials: false },
+          { withCredentials: true }, // Always send credentials
         );
       } else {
         // Get all products
         setIsSearching(false);
         response = await axios.get(
           `${BASEURL}/api/products?page=${currentPage}&limit=${PRODUCTS_PER_PAGE}`,
-          { withCredentials: false },
+          { withCredentials: true }, // Always send credentials
         );
       }
 
@@ -129,6 +176,13 @@ const ListProducts = () => {
         } else {
           setSearchParams({});
         }
+
+        // Immediately update wishlist state from API response
+        // This works regardless of loggedIn state - API returns isWishlisted based on cookies
+        const wishlistedProductIds = fetchedProducts
+          .filter((p) => p.isWishlisted)
+          .map((p) => p._id);
+        setWishlistedItems(new Set(wishlistedProductIds));
       } else {
         setError("Failed to load products");
       }
@@ -218,17 +272,44 @@ const ListProducts = () => {
   };
 
   // ======================= WISHLIST =======================
-  const toggleWishlist = (productId, e) => {
+  const toggleWishlist = async (productId, e) => {
     e.stopPropagation();
-    const newWishlisted = new Set(wishlistedItems);
-    if (newWishlisted.has(productId)) {
-      newWishlisted.delete(productId);
-      showNotification("Removed from wishlist");
-    } else {
-      newWishlisted.add(productId);
-      showNotification("Added to wishlist");
+
+    if (!loggedIn) {
+      // Redirect to login if not logged in
+      showNotification("Please login to add items to wishlist", "error");
+      setTimeout(() => navigate("/login"), 1500);
+      return;
     }
-    setWishlistedItems(newWishlisted);
+
+    try {
+      const isWishlisted = wishlistedItems.has(productId);
+
+      if (isWishlisted) {
+        // Remove from wishlist
+        await axios.delete(`${BASEURL}/api/wishlist/${productId}`, {
+          withCredentials: true,
+        });
+        const newWishlisted = new Set(wishlistedItems);
+        newWishlisted.delete(productId);
+        setWishlistedItems(newWishlisted);
+        showNotification("Removed from wishlist");
+      } else {
+        // Add to wishlist
+        await axios.post(
+          `${BASEURL}/api/wishlist/${productId}`,
+          {},
+          { withCredentials: true },
+        );
+        const newWishlisted = new Set(wishlistedItems);
+        newWishlisted.add(productId);
+        setWishlistedItems(newWishlisted);
+        showNotification("Added to wishlist");
+      }
+    } catch (err) {
+      console.error("Wishlist toggle failed:", err);
+      showNotification("Failed to update wishlist", "error");
+    }
   };
 
   // ======================= NOTIFICATION =======================
@@ -268,6 +349,67 @@ const ListProducts = () => {
   const getProductColors = (product) => {
     return (
       product.variantSummary?.availableColors?.filter((c) => c.isActive) || []
+    );
+  };
+
+  const getAverageReview = (product) => {
+    return product.averageReview || 0;
+  };
+
+  // Render star rating
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <svg
+            key={i}
+            className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>,
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <svg key={i} className="w-3.5 h-3.5" viewBox="0 0 24 24">
+            <defs>
+              <linearGradient id={`half-star-list-${i}`}>
+                <stop offset="50%" stopColor="#FBBF24" />
+                <stop offset="50%" stopColor="#D1D5DB" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              fill={`url(#half-star-list-${i})`}
+            />
+          </svg>,
+        );
+      } else {
+        stars.push(
+          <svg
+            key={i}
+            className="w-3.5 h-3.5 fill-gray-300 text-gray-300"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>,
+        );
+      }
+    }
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {stars}
+        {rating > 0 && (
+          <span className="text-xs text-gray-500 ml-1">
+            ({rating.toFixed(1)})
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -315,6 +457,7 @@ const ListProducts = () => {
     const price = getProductPrice(product);
     const quantity = getProductQuantity(product);
     const colors = getProductColors(product);
+    const averageReview = getAverageReview(product);
     const isOutOfStock = quantity <= 0;
     const isWishlisted = wishlistedItems.has(product._id);
 
@@ -368,12 +511,14 @@ const ListProducts = () => {
           <div className="absolute top-3 right-3 flex flex-col gap-2">
             <button
               onClick={(e) => toggleWishlist(product._id, e)}
-              className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition hover:bg-white hover:scale-110"
+              className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md transition hover:bg-white hover:scale-110"
             >
               <Heart
                 size={14}
                 className={`transition ${
-                  isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
+                  isWishlisted
+                    ? "fill-red-500 text-red-500"
+                    : "text-gray-600 hover:text-red-500"
                 }`}
               />
             </button>
@@ -435,6 +580,11 @@ const ListProducts = () => {
           <h3 className="font-semibold text-sm sm:text-base text-gray-900 line-clamp-2 leading-snug mb-2 group-hover:text-red-500 transition-colors">
             {product.name}
           </h3>
+
+          {/* Average Review Stars */}
+          {averageReview > 0 && (
+            <div className="mt-1 mb-1">{renderStars(averageReview)}</div>
+          )}
 
           {/* Color Dots */}
           {colors.length > 0 && (
