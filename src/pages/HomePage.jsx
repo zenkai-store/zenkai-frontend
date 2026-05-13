@@ -302,7 +302,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
 
       const response = await axios.get(
         `${BASEURL}/api/products?page=1&limit=4`,
-        { withCredentials: false },
+        { withCredentials: loggedIn }, // Send credentials if logged in
       );
 
       if (response.data.success) {
@@ -321,6 +321,8 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
               product.variantSummary?.availableColors?.filter(
                 (c) => c.isActive,
               ) || [],
+            averageReview: product.averageReview || 0,
+            isWishlisted: product.isWishlisted || false,
           }));
 
         setExploreProducts(products);
@@ -339,7 +341,20 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
     fetchNewArrivals();
     fetchCategories();
     fetchExploreProducts();
-  }, []);
+  }, [loggedIn]); // Re-fetch when login state changes
+
+  // Update wishlist from explore products when login state changes
+  useEffect(() => {
+    if (loggedIn && exploreProducts.length > 0) {
+      const wishlistedProductIds = exploreProducts
+        .filter((p) => p.isWishlisted)
+        .map((p) => p._id);
+      setWishlistedItems(new Set(wishlistedProductIds));
+    } else if (!loggedIn) {
+      // Clear wishlist when logged out
+      setWishlistedItems(new Set());
+    }
+  }, [loggedIn, exploreProducts]);
 
   // ==========================================================
   // FORMAT PRICE
@@ -356,6 +371,63 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
   const calculateDiscount = (marketPrice, sellingPrice) => {
     if (!marketPrice || !sellingPrice || marketPrice <= sellingPrice) return 0;
     return Math.round(((marketPrice - sellingPrice) / marketPrice) * 100);
+  };
+
+  // Render star rating
+  const renderStars = (rating) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(
+          <svg
+            key={i}
+            className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>,
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <svg key={i} className="w-3.5 h-3.5" viewBox="0 0 24 24">
+            <defs>
+              <linearGradient id={`half-star-${i}`}>
+                <stop offset="50%" stopColor="#FBBF24" />
+                <stop offset="50%" stopColor="#D1D5DB" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+              fill={`url(#half-star-${i})`}
+            />
+          </svg>,
+        );
+      } else {
+        stars.push(
+          <svg
+            key={i}
+            className="w-3.5 h-3.5 fill-gray-300 text-gray-300"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>,
+        );
+      }
+    }
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {stars}
+        {rating > 0 && (
+          <span className="text-xs text-gray-500 ml-1">
+            ({rating.toFixed(1)})
+          </span>
+        )}
+      </div>
+    );
   };
 
   // ==========================================================
@@ -767,6 +839,13 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
                         {product.name}
                       </h3>
 
+                      {/* Average Review Stars */}
+                      {product.averageReview > 0 && (
+                        <div className="mt-1.5">
+                          {renderStars(product.averageReview)}
+                        </div>
+                      )}
+
                       {/* Price Display */}
                       <div className="flex items-baseline gap-2 mt-2 flex-wrap">
                         {/* Selling Price - Bold */}
@@ -980,7 +1059,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
                         {/* Wishlist Button */}
                         <button
                           onClick={(e) => handleWishlistToggle(product._id, e)}
-                          className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition hover:bg-white"
+                          className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md transition hover:bg-white"
                         >
                           <Heart
                             size={18}
@@ -1010,6 +1089,13 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
                         <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate group-hover:text-red-500 transition-colors">
                           {product.name}
                         </h3>
+
+                        {/* Average Review Stars */}
+                        {product.averageReview > 0 && (
+                          <div className="mt-1.5">
+                            {renderStars(product.averageReview)}
+                          </div>
+                        )}
 
                         {/* Color Dots */}
                         {product.colors.length > 0 && (
