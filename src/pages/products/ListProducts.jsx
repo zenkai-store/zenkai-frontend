@@ -11,6 +11,8 @@ import {
   setStoredUserData,
 } from "../../utils/auth";
 
+import { useCart } from "../../services/cartService";
+
 import {
   Search,
   X,
@@ -92,6 +94,9 @@ const ListProducts = () => {
   // Notification
   const [notification, setNotification] = useState(null);
 
+  // Cart
+  const { cartCount, addItemToCart, fetchCart } = useCart();
+
   // Filter panel (mobile)
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
@@ -133,6 +138,13 @@ const ListProducts = () => {
     // Always verify with backend
     checkAuth();
   }, []);
+
+  // Fetch cart on mount if logged in
+  useEffect(() => {
+    if (loggedIn) {
+      fetchCart();
+    }
+  }, [loggedIn]);
 
   // ======================= FETCH PRODUCTS =======================
   const fetchProducts = useCallback(async () => {
@@ -310,6 +322,31 @@ const ListProducts = () => {
       console.error("Wishlist toggle failed:", err);
       showNotification("Failed to update wishlist", "error");
     }
+  };
+
+  // ======================= ADD TO CART =======================
+  const handleAddToCart = async (productId, variantId, productName, e) => {
+    e.stopPropagation();
+
+    if (!loggedIn) {
+      showNotification("Please login to add items to cart", "error");
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+
+    const result = await addItemToCart(
+      productId,
+      variantId,
+      1,
+      (response) => {
+        showNotification(`${productName} added to cart!`, "success");
+      },
+      (errorMessage) => {
+        showNotification(errorMessage, "error");
+      },
+    );
+
+    return result;
   };
 
   // ======================= NOTIFICATION =======================
@@ -539,9 +576,15 @@ const ListProducts = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                showNotification("Add to cart functionality coming soon!");
+                handleAddToCart(
+                  product._id,
+                  null, // null variantId will use default variant
+                  product.name,
+                  e,
+                );
               }}
-              className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm text-white py-2.5 rounded-xl font-medium text-xs opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black active:scale-95"
+              disabled={isOutOfStock}
+              className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm text-white py-2.5 rounded-xl font-medium text-xs opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center justify-center gap-1.5">
                 <ShoppingCart size={13} />
@@ -622,9 +665,15 @@ const ListProducts = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                showNotification("Add to cart functionality coming soon!");
+                handleAddToCart(
+                  product._id,
+                  null, // null variantId will use default variant
+                  product.name,
+                  e,
+                );
               }}
-              className="mt-3 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-500/25 w-fit active:scale-95"
+              disabled={isOutOfStock}
+              className="mt-3 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-500/25 w-fit active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ShoppingCart size={14} />
               Add to Cart
@@ -768,6 +817,20 @@ const ListProducts = () => {
                 title="Refresh"
               >
                 <RefreshCw size={15} className="text-gray-600" />
+              </button>
+
+              {/* Cart Button */}
+              <button
+                onClick={() => navigate("/cart")}
+                className="relative w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition active:scale-95"
+                title="View Cart"
+              >
+                <ShoppingCart size={15} className="text-gray-600" />
+                {loggedIn && cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
               </button>
             </div>
           </div>

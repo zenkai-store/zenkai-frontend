@@ -16,6 +16,7 @@ import ListProducts from "./pages/products/ListProducts";
 import ProductsList from "./pages/products/ProductList";
 import Wishlist from "./pages/order/Wishlist";
 import ContactUs from "./pages/ContactUs";
+import Cart from "./pages/Cart";
 
 // Protected Route Component for Admin
 const ProtectedAdminRoute = ({ children }) => {
@@ -72,6 +73,7 @@ function App() {
       <Route path="/products" element={<ListProducts />} />
       <Route path="/wishlist" element={<Wishlist />} />
       <Route path="/contact" element={<ContactUs />} />
+      <Route path="/cart" element={<Cart />} />
 
       {/* Protected Admin Routes - All wrapped in Admin Layout */}
       <Route
