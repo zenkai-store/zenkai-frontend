@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+import { useCart } from "../services/cartService";
+
 import {
   logout,
   getCachedUserData,
@@ -81,6 +83,9 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
   const [exploreProducts, setExploreProducts] = useState([]);
   const [exploreLoading, setExploreLoading] = useState(true);
   const [exploreError, setExploreError] = useState("");
+
+  // Cart state
+  const { cartCount, fetchCart } = useCart();
 
   // Sync the local loggedIn state with the prop from App
   useEffect(() => {
@@ -205,6 +210,13 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
       setWishlistLoading(false);
     }
   };
+
+  // Fetch cart when logged in
+  useEffect(() => {
+    if (loggedIn) {
+      fetchCart();
+    }
+  }, [loggedIn]);
 
   // ==========================================================
   // FETCH NEW ARRIVALS
@@ -341,7 +353,10 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
     fetchNewArrivals();
     fetchCategories();
     fetchExploreProducts();
-  }, [loggedIn]); // Re-fetch when login state changes
+    if (loggedIn) {
+      fetchCart();
+    }
+  }, [loggedIn, fetchCart]); // Re-fetch when login state changes
 
   // Update wishlist from explore products when login state changes
   useEffect(() => {
@@ -563,7 +578,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
               </form>
 
               {/* Cart Icon */}
-              <button className="relative">
+              <button onClick={() => navigate("/cart")} className="relative">
                 <svg
                   className="w-6 h-6"
                   fill="none"
@@ -577,9 +592,11 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
                     d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
-                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  0
-                </span>
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
               </button>
 
               {/* Profile / Login */}

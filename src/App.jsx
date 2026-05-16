@@ -18,6 +18,8 @@ import Wishlist from "./pages/order/Wishlist";
 import ContactUs from "./pages/ContactUs";
 import Cart from "./pages/Cart";
 
+import { CartProvider } from "./context/CartContext";
+
 // Protected Route Component for Admin
 const ProtectedAdminRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -58,51 +60,56 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route
-        path="/"
-        element={
-          <HomePage isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
-        }
-      />
-      <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
-      <Route path="/admin/login" element={<AdminLogin />} />
-      <Route path="/product/:slug" element={<AboutProduct />} />
-      <Route path="/category/:slug" element={<CategoryProducts />} />
-      <Route path="/products" element={<ListProducts />} />
-      <Route path="/wishlist" element={<Wishlist />} />
-      <Route path="/contact" element={<ContactUs />} />
-      <Route path="/cart" element={<Cart />} />
+    <CartProvider>
+      <Routes>
+        {/* Public Routes */}
+        <Route
+          path="/"
+          element={
+            <HomePage isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+          }
+        />
+        <Route
+          path="/login"
+          element={<Login setIsLoggedIn={setIsLoggedIn} />}
+        />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/product/:slug" element={<AboutProduct />} />
+        <Route path="/category/:slug" element={<CategoryProducts />} />
+        <Route path="/products" element={<ListProducts />} />
+        <Route path="/wishlist" element={<Wishlist />} />
+        <Route path="/contact" element={<ContactUs />} />
+        <Route path="/cart" element={<Cart />} />
 
-      {/* Protected Admin Routes - All wrapped in Admin Layout */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedAdminRoute>
-            <Admin />
-          </ProtectedAdminRoute>
-        }
-      >
-        {/* Dashboard - Index Route */}
-        <Route index element={<Dashboard />} />
+        {/* Protected Admin Routes - All wrapped in Admin Layout */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedAdminRoute>
+              <Admin />
+            </ProtectedAdminRoute>
+          }
+        >
+          {/* Dashboard - Index Route */}
+          <Route index element={<Dashboard />} />
 
-        <Route path="products/list" element={<ProductsList />} />
-        <Route path="products/:productId" element={<ProductDetailPage />} />
-        <Route path="expense/list" element={<Expenses />} />
-        <Route path="featured/arrivals/list" element={<NewArrivals />} />
-        <Route path="categories/list" element={<Categories />} />
-      </Route>
+          <Route path="products/list" element={<ProductsList />} />
+          <Route path="products/:productId" element={<ProductDetailPage />} />
+          <Route path="expense/list" element={<Expenses />} />
+          <Route path="featured/arrivals/list" element={<NewArrivals />} />
+          <Route path="categories/list" element={<Categories />} />
+        </Route>
 
-      <Route
-        path="*"
-        element={
-          <div className="w-full h-screen flex justify-center items-center uppercase text-3xl font-bold">
-            404! Page Not Found
-          </div>
-        }
-      />
-    </Routes>
+        <Route
+          path="*"
+          element={
+            <div className="w-full h-screen flex justify-center items-center uppercase text-3xl font-bold">
+              404! Page Not Found
+            </div>
+          }
+        />
+      </Routes>
+    </CartProvider>
   );
 }
 
