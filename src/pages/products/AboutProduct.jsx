@@ -137,6 +137,7 @@ const AboutProduct = () => {
                 productData.variants[0];
               setSelectedVariant(defaultVariant);
               setSelectedColor(defaultVariant.color?.code || null);
+              setIsWishlisted(defaultVariant.isWishlisted || false);
 
               // Set active image to first media
               if (defaultVariant.media?.length > 0) {
@@ -173,6 +174,7 @@ const AboutProduct = () => {
     if (variant) {
       setSelectedVariant(variant);
       setSelectedColor(colorCode);
+      setIsWishlisted(variant.isWishlisted || false);
       setActiveImageIndex(0);
       setQuantity(1);
     }
@@ -963,7 +965,7 @@ const AboutProduct = () => {
                     <p className="text-sm font-medium text-gray-900">
                       Free Shipping
                     </p>
-                    <p className="text-xs text-gray-500">On orders over ₹500</p>
+                    <p className="text-xs text-gray-500">On every order</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -985,10 +987,10 @@ const AboutProduct = () => {
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      Easy Returns
+                      Easy Exchange
                     </p>
                     <p className="text-xs text-gray-500">
-                      30-day return policy
+                      7-day exchange policy
                     </p>
                   </div>
                 </li>
