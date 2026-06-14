@@ -29,7 +29,7 @@ const ProtectedAdminRoute = ({ children }) => {
     const checkAdminAuth = () => {
       // Only check if we have the adminLoggedIn flag (set after login)
       const adminLoggedIn = localStorage.getItem("adminLoggedIn");
-
+      // Only check if we have the adminLoggedIn flag (set after login)
       if (adminLoggedIn === "true") {
         setIsAuthenticated(true);
       } else {
