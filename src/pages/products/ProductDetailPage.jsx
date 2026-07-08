@@ -1740,7 +1740,14 @@ const ProductDetailPage = () => {
                   }
                   className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-lg"
                 >
-                  {creating ? "Creating..." : "Add Variant"}
+                  {creating ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Adding...
+                    </span>
+                  ) : (
+                    "Add Variant"
+                  )}
                 </button>
               </div>
             </div>

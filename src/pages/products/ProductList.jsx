@@ -410,19 +410,69 @@ const ProductsList = () => {
   };
 
   const handleAddVariant = async () => {
-    if (!selectedProduct) return;
+    // Validate required fields
+    if (!variantFormData.color.name.trim()) {
+      setCreateError("Color name is required.");
+      return;
+    }
+    if (!variantFormData.color.code.trim()) {
+      setCreateError("Color code is required.");
+      return;
+    }
+    if (
+      !variantFormData.pricing.sellingPrice ||
+      Number(variantFormData.pricing.sellingPrice) <= 0
+    ) {
+      setCreateError("Selling price must be a positive number.");
+      return;
+    }
+    if (
+      !variantFormData.pricing.marketPrice ||
+      Number(variantFormData.pricing.marketPrice) <= 0
+    ) {
+      setCreateError("Market price must be a positive number.");
+      return;
+    }
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("variant", JSON.stringify(variantFormData));
+      setCreating(true);
+      setCreateError("");
+      setCreateSuccess("");
 
+      const formData = new FormData();
+
+      // Build variant object with correct types
+      const variantPayload = {
+        color: {
+          name: variantFormData.color.name.trim(),
+          code: variantFormData.color.code.trim(),
+        },
+        pricing: {
+          costPrice: Number(variantFormData.pricing.costPrice) || 0,
+          marginalPrice: Number(variantFormData.pricing.marginalPrice) || 0,
+          marketPrice: Number(variantFormData.pricing.marketPrice),
+          sellingPrice: Number(variantFormData.pricing.sellingPrice),
+          onSalePrice: variantFormData.pricing.onSalePrice
+            ? Number(variantFormData.pricing.onSalePrice)
+            : null,
+        },
+        quantity: Number(variantFormData.quantity) || 0,
+        isOnSale:
+          !!variantFormData.pricing.onSalePrice &&
+          Number(variantFormData.pricing.onSalePrice) > 0,
+      };
+
+      // Append variant as JSON string
+      formData.append("variant", JSON.stringify(variantPayload));
+
+      // Append media files
       variantFormData.media.forEach((file) => {
-        formDataToSend.append("media", file);
+        formData.append("media", file);
       });
 
       const response = await axios.post(
         `${BASEURL}/api/admin/products/${selectedProduct._id}/variants`,
-        formDataToSend,
+        formData,
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
@@ -430,12 +480,23 @@ const ProductsList = () => {
       );
 
       if (response.data.success) {
-        setShowVariantModal(false);
-        resetVariantForm();
-        fetchProductVariants(selectedProduct._id);
+        setCreateSuccess("Variant added successfully!");
+        setTimeout(() => {
+          setShowVariantModal(false);
+          resetVariantForm();
+          fetchProducts(currentPage);
+          setCreateSuccess("");
+        }, 1500);
       }
     } catch (error) {
-      console.error("Failed to add variant:", error);
+      console.error("Add variant error:", error);
+      const errorMsg =
+        error.response?.data?.message ||
+        error.response?.data?.errors?.join(", ") ||
+        "Failed to add variant. Please try again.";
+      setCreateError(errorMsg);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -452,7 +513,8 @@ const ProductsList = () => {
       quantity: "",
       media: [],
     });
-    // Clear file input
+    setCreateError("");
+    setCreateSuccess("");
     if (variantFileInputRef.current) {
       variantFileInputRef.current.value = "";
     }
@@ -2060,13 +2122,21 @@ const ProductsList = () => {
                 <button
                   onClick={handleAddVariant}
                   disabled={
+                    creating ||
                     !variantFormData.color.name ||
                     !variantFormData.pricing.marketPrice ||
                     !variantFormData.pricing.sellingPrice
                   }
                   className="px-8 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-lg"
                 >
-                  Add Variant
+                  {creating ? (
+                    <span className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Adding...
+                    </span>
+                  ) : (
+                    "Add Variant"
+                  )}
                 </button>
               </div>
             </div>
