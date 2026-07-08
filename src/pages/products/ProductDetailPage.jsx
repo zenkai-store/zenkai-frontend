@@ -81,6 +81,30 @@ const ProductDetailPage = () => {
   const [deletingMediaId, setDeletingMediaId] = useState(null);
   const [variantMediaFiles, setVariantMediaFiles] = useState([]);
 
+  // Categories for edit modal
+  const [categories, setCategories] = useState([]);
+
+  // Variant edit states
+  const [showEditVariantModal, setShowEditVariantModal] = useState(false);
+  const [editingVariant, setEditingVariant] = useState(null);
+  const [variantEditFormData, setVariantEditFormData] = useState({
+    color: { name: "", code: "#ff0000" },
+    pricing: {
+      costPrice: "",
+      marginalPrice: "",
+      marketPrice: "",
+      sellingPrice: "",
+      onSalePrice: null,
+    },
+    quantity: "",
+    isActive: true,
+    isDefault: false,
+    isOnSale: false,
+  });
+  const [variantEditLoading, setVariantEditLoading] = useState(false);
+  const [variantEditError, setVariantEditError] = useState("");
+  const [variantEditSuccess, setVariantEditSuccess] = useState("");
+
   // Variant form data
   const [variantFormData, setVariantFormData] = useState({
     color: { name: "", code: "#ff0000" },
@@ -138,6 +162,20 @@ const ProductDetailPage = () => {
     }
   };
 
+  // ======================= FETCH CATEGORIES ========================
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${BASEURL}/api/admin/categories`, {
+        withCredentials: false,
+      });
+      if (response.data.success) {
+        setCategories(response.data.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    }
+  };
+
   // Fetch variants separately
   const fetchVariants = async () => {
     try {
@@ -160,6 +198,7 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (productId) {
       fetchProductDetails();
+      fetchCategories();
     }
   }, [productId]);
 
@@ -403,6 +442,44 @@ const ProductDetailPage = () => {
     } catch (error) {
       console.error("Failed to delete variant:", error);
       alert("Failed to delete variant.");
+    }
+  };
+
+  const handleUpdateVariant = async () => {
+    if (!editingVariant) return;
+    try {
+      setVariantEditLoading(true);
+      setVariantEditError("");
+      setVariantEditSuccess("");
+
+      const response = await axios.put(
+        `${BASEURL}/api/admin/products/${productId}/variants/${editingVariant._id}`,
+        {
+          color: variantEditFormData.color,
+          pricing: variantEditFormData.pricing,
+          quantity: variantEditFormData.quantity,
+          isActive: variantEditFormData.isActive,
+          isDefault: variantEditFormData.isDefault,
+          isOnSale: variantEditFormData.isOnSale,
+        },
+        { withCredentials: true },
+      );
+
+      if (response.data.success) {
+        setVariantEditSuccess("Variant updated successfully!");
+        setTimeout(() => {
+          setShowEditVariantModal(false);
+          setEditingVariant(null);
+          fetchProductDetails();
+          setVariantEditSuccess("");
+        }, 1500);
+      }
+    } catch (error) {
+      setVariantEditError(
+        error.response?.data?.message || "Failed to update variant.",
+      );
+    } finally {
+      setVariantEditLoading(false);
     }
   };
 
@@ -1307,6 +1384,36 @@ const ProductDetailPage = () => {
                           )}
                         </button>
                         <button
+                          onClick={() => {
+                            setEditingVariant(variant);
+                            setVariantEditFormData({
+                              color: variant.color || {
+                                name: "",
+                                code: "#ff0000",
+                              },
+                              pricing: {
+                                costPrice: variant.pricing?.costPrice || "",
+                                marginalPrice:
+                                  variant.pricing?.marginalPrice || "",
+                                marketPrice: variant.pricing?.marketPrice || "",
+                                sellingPrice:
+                                  variant.pricing?.sellingPrice || "",
+                                onSalePrice:
+                                  variant.pricing?.onSalePrice || null,
+                              },
+                              quantity: variant.quantity || "",
+                              isActive: variant.isActive !== false,
+                              isDefault: variant.isDefault || false,
+                              isOnSale: variant.isOnSale || false,
+                            });
+                            setShowEditVariantModal(true);
+                          }}
+                          className="p-1.5 bg-gray-700 rounded text-gray-400 hover:text-white transition"
+                          title="Edit Variant"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
                           onClick={() => handleDeleteVariant(variant._id)}
                           className="p-1.5 bg-red-500/10 rounded-lg text-red-400 hover:bg-red-500/20 transition"
                           title="Delete Variant"
@@ -1940,15 +2047,19 @@ const ProductDetailPage = () => {
         </div>
       )}
 
-      {/* ======================= EDIT PRODUCT MODAL ======================= */}
+      {/* ======================= EDIT PRODUCT MODAL (Enhanced) ======================= */}
       {showEditProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 w-full max-w-lg rounded-2xl border border-gray-700 shadow-2xl">
-            <div className="p-6 border-b border-gray-700">
+          <div className="bg-gray-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 shadow-2xl">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 rounded-t-2xl z-10">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">Edit Product</h2>
+                <h2 className="text-2xl font-bold text-white">Edit Product</h2>
                 <button
-                  onClick={() => setShowEditProductModal(false)}
+                  onClick={() => {
+                    setShowEditProductModal(false);
+                    setActionError("");
+                    setActionSuccess("");
+                  }}
                   className="p-2 hover:bg-gray-800 rounded-lg transition"
                 >
                   <X size={20} className="text-gray-400" />
@@ -1956,52 +2067,137 @@ const ProductDetailPage = () => {
               </div>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6">
               {actionError && (
-                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
                   <AlertCircle size={20} className="text-red-400" />
                   <span className="text-red-400">{actionError}</span>
                 </div>
               )}
+              {actionSuccess && (
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-3">
+                  <CheckCircle size={20} className="text-green-400" />
+                  <span className="text-green-400">{actionSuccess}</span>
+                </div>
+              )}
 
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Product Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={editFormData.name}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, name: e.target.value })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left column */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Product ID <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.productId}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          productId: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-gray-300 text-sm font-medium mb-2">
-                  Status
-                </label>
-                <select
-                  value={editFormData.isActive}
-                  onChange={(e) =>
-                    setEditFormData({
-                      ...editFormData,
-                      isActive: e.target.value === "true",
-                    })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Product Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          name: e.target.value,
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                    />
+                  </div>
+
+                  {/* Categories */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Categories
+                    </label>
+                    <CategoryDropdown
+                      categories={categories}
+                      selectedIds={editFormData.categories || []}
+                      onChange={(ids) =>
+                        setEditFormData({ ...editFormData, categories: ids })
+                      }
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Description
+                    </label>
+                    <DescriptionBuilder
+                      items={editFormData.descriptionItems || []}
+                      onChange={(items) =>
+                        setEditFormData({
+                          ...editFormData,
+                          descriptionItems: items,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Right column */}
+                <div className="space-y-4">
+                  {/* Product Details */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Product Details (topic: detail format)
+                    </label>
+                    <ProductDetailsBuilder
+                      items={editFormData.productDetailsItems || []}
+                      onChange={(items) =>
+                        setEditFormData({
+                          ...editFormData,
+                          productDetailsItems: items,
+                        })
+                      }
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={editFormData.isActive}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          isActive: e.target.value === "true",
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-700">
+            <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 p-6 rounded-b-2xl">
               <div className="flex items-center justify-end gap-3">
                 <button
-                  onClick={() => setShowEditProductModal(false)}
+                  onClick={() => {
+                    setShowEditProductModal(false);
+                    setActionError("");
+                    setActionSuccess("");
+                  }}
                   className="px-6 py-3 border border-gray-700 text-gray-400 rounded-xl hover:bg-gray-800 transition font-medium"
                 >
                   Cancel
@@ -2054,6 +2250,320 @@ const ProductDetailPage = () => {
                   className="px-8 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-50 transition font-medium shadow-lg shadow-red-500/25"
                 >
                   {creating ? "Deleting..." : "Delete Product"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================= EDIT VARIANT MODAL ======================= */}
+      {showEditVariantModal && editingVariant && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 shadow-2xl">
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">
+                  Edit Variant: {editingVariant.name}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowEditVariantModal(false);
+                    setEditingVariant(null);
+                    setVariantEditError("");
+                    setVariantEditSuccess("");
+                  }}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition"
+                >
+                  <X size={20} className="text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {variantEditError && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                  <AlertCircle size={20} className="text-red-400" />
+                  <span className="text-red-400 text-sm">
+                    {variantEditError}
+                  </span>
+                </div>
+              )}
+              {variantEditSuccess && (
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-3">
+                  <CheckCircle size={20} className="text-green-400" />
+                  <span className="text-green-400 text-sm">
+                    {variantEditSuccess}
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Color Name <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={variantEditFormData.color.name}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        color: {
+                          ...variantEditFormData.color,
+                          name: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Quantity <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={variantEditFormData.quantity}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        quantity: e.target.value,
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Market Price <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={variantEditFormData.pricing.marketPrice}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        pricing: {
+                          ...variantEditFormData.pricing,
+                          marketPrice: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Selling Price <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={variantEditFormData.pricing.sellingPrice}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        pricing: {
+                          ...variantEditFormData.pricing,
+                          sellingPrice: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    On-Sale Price{" "}
+                    <span className="text-gray-500">(optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={variantEditFormData.pricing.onSalePrice || ""}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        pricing: {
+                          ...variantEditFormData.pricing,
+                          onSalePrice: e.target.value || null,
+                        },
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-green-500 transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Color Code
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={variantEditFormData.color.code}
+                      onChange={(e) =>
+                        setVariantEditFormData({
+                          ...variantEditFormData,
+                          color: {
+                            ...variantEditFormData.color,
+                            code: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-10 h-10 rounded-lg cursor-pointer bg-gray-800 border border-gray-700"
+                    />
+                    <input
+                      type="text"
+                      value={variantEditFormData.color.code}
+                      onChange={(e) =>
+                        setVariantEditFormData({
+                          ...variantEditFormData,
+                          color: {
+                            ...variantEditFormData.color,
+                            code: e.target.value,
+                          },
+                        })
+                      }
+                      className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition font-mono text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Is Active
+                  </label>
+                  <select
+                    value={variantEditFormData.isActive}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        isActive: e.target.value === "true",
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                  >
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm font-medium mb-2">
+                    Is Default
+                  </label>
+                  <select
+                    value={variantEditFormData.isDefault}
+                    onChange={(e) =>
+                      setVariantEditFormData({
+                        ...variantEditFormData,
+                        isDefault: e.target.value === "true",
+                      })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                  >
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Is On Sale
+                </label>
+                <select
+                  value={variantEditFormData.isOnSale}
+                  onChange={(e) =>
+                    setVariantEditFormData({
+                      ...variantEditFormData,
+                      isOnSale: e.target.value === "true",
+                    })
+                  }
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                >
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+
+              {/* Internal Pricing (collapsible) */}
+              <details className="group">
+                <summary className="text-gray-600 text-xs cursor-pointer hover:text-gray-400 transition flex items-center gap-1">
+                  <ChevronDown
+                    size={12}
+                    className="group-open:rotate-180 transition-transform"
+                  />
+                  Internal Pricing (Cost & Marginal)
+                </summary>
+                <div className="mt-2 grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-gray-500 text-xs font-medium mb-1">
+                      Cost Price
+                    </label>
+                    <input
+                      type="number"
+                      value={variantEditFormData.pricing.costPrice}
+                      onChange={(e) =>
+                        setVariantEditFormData({
+                          ...variantEditFormData,
+                          pricing: {
+                            ...variantEditFormData.pricing,
+                            costPrice: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-gray-400 placeholder-gray-600 focus:outline-none focus:border-gray-500 transition text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-500 text-xs font-medium mb-1">
+                      Marginal Price
+                    </label>
+                    <input
+                      type="number"
+                      value={variantEditFormData.pricing.marginalPrice}
+                      onChange={(e) =>
+                        setVariantEditFormData({
+                          ...variantEditFormData,
+                          pricing: {
+                            ...variantEditFormData.pricing,
+                            marginalPrice: e.target.value,
+                          },
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-gray-400 placeholder-gray-600 focus:outline-none focus:border-gray-500 transition text-sm"
+                    />
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 p-6 rounded-b-2xl">
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setShowEditVariantModal(false);
+                    setEditingVariant(null);
+                    setVariantEditError("");
+                    setVariantEditSuccess("");
+                  }}
+                  className="px-6 py-3 border border-gray-700 text-gray-400 rounded-xl hover:bg-gray-800 transition font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateVariant}
+                  disabled={variantEditLoading}
+                  className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-xl hover:from-yellow-600 hover:to-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-lg"
+                >
+                  {variantEditLoading ? "Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>

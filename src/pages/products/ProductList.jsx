@@ -62,6 +62,21 @@ const ProductsList = () => {
   const [createSuccess, setCreateSuccess] = useState("");
   const variantFileInputRef = useRef(null);
 
+  // Edit product modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    productId: "",
+    name: "",
+    categories: [],
+    descriptionItems: [],
+    productDetailsItems: [],
+    isActive: true,
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editSuccess, setEditSuccess] = useState("");
+
   // Categories and dropdown data
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -461,6 +476,51 @@ const ProductsList = () => {
     }
   };
 
+  const handleUpdateProduct = async () => {
+    if (!editingProduct) return;
+    if (!editFormData.name || !editFormData.productId) {
+      setEditError("Product name and Product ID are required.");
+      return;
+    }
+
+    try {
+      setEditLoading(true);
+      setEditError("");
+      setEditSuccess("");
+
+      const payload = {
+        productId: editFormData.productId,
+        name: editFormData.name,
+        categories: editFormData.categories,
+        description: editFormData.descriptionItems,
+        productDetails: editFormData.productDetailsItems,
+        isActive: editFormData.isActive,
+      };
+
+      const response = await axios.put(
+        `${BASEURL}/api/admin/products/${editingProduct._id}`,
+        payload,
+        { withCredentials: true },
+      );
+
+      if (response.data.success) {
+        setEditSuccess("Product updated successfully!");
+        setTimeout(() => {
+          setShowEditModal(false);
+          setEditingProduct(null);
+          fetchProducts(currentPage);
+          setEditSuccess("");
+        }, 1500);
+      }
+    } catch (error) {
+      setEditError(
+        error.response?.data?.message || "Failed to update product.",
+      );
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   // ======================= STATS DATA =======================
   const stats = [
     {
@@ -488,8 +548,8 @@ const ProductsList = () => {
       title: "Avg. Price",
       value:
         products.length > 0
-          ? `$${Math.round(products.reduce((acc, p) => acc + (p.variantSummary?.minPrice || 0), 0) / products.length)}`
-          : "$0",
+          ? `₹${Math.round(products.reduce((acc, p) => acc + (p.variantSummary?.minPrice || 0), 0) / products.length)}`
+          : "₹0",
       icon: DollarSign,
       color: "from-yellow-500 to-orange-500",
       bgColor: "bg-yellow-500/10",
@@ -998,18 +1058,18 @@ const ProductsList = () => {
                       <td className="py-4 px-4">
                         <span className="text-white">
                           {product.pricing?.sellingPrice ? (
-                            <>${product.pricing.sellingPrice}</>
+                            <>₹{product.pricing.sellingPrice}</>
                           ) : product.variantSummary?.minPrice ? (
                             <>
-                              ${product.variantSummary.minPrice}
+                              ₹{product.variantSummary.minPrice}
                               {product.variantSummary.maxPrice &&
                                 product.variantSummary.maxPrice >
                                   product.variantSummary.minPrice && (
-                                  <> - ${product.variantSummary.maxPrice}</>
+                                  <> - ₹{product.variantSummary.maxPrice}</>
                                 )}
                             </>
                           ) : (
-                            "$0"
+                            "₹0"
                           )}
                         </span>
                       </td>
@@ -1054,9 +1114,20 @@ const ProductsList = () => {
                             <Layers size={16} />
                           </button>
                           <button
-                            onClick={() =>
-                              navigate(`/admin/products/edit/${product._id}`)
-                            }
+                            onClick={() => {
+                              setEditingProduct(product);
+                              setEditFormData({
+                                productId: product.productId,
+                                name: product.name,
+                                categories:
+                                  product.categories?.map((c) => c._id) || [],
+                                descriptionItems: product.description || [],
+                                productDetailsItems:
+                                  product.productDetails || [],
+                                isActive: product.isActive !== false,
+                              });
+                              setShowEditModal(true);
+                            }}
                             className="p-2 bg-gray-700 rounded-lg text-yellow-400 hover:text-yellow-300 hover:bg-gray-600 transition"
                             title="Edit"
                           >
@@ -1165,13 +1236,13 @@ const ProductsList = () => {
                                           <td className="py-3 px-3">
                                             <div>
                                               <p className="text-white text-sm">
-                                                ${variant.pricing?.sellingPrice}
+                                                ₹{variant.pricing?.sellingPrice}
                                               </p>
                                               {variant.isOnSale &&
                                                 variant.pricing
                                                   ?.onSalePrice && (
                                                   <p className="text-green-400 text-xs">
-                                                    Sale: $
+                                                    Sale: ₹
                                                     {
                                                       variant.pricing
                                                         .onSalePrice
@@ -2038,6 +2109,196 @@ const ProductsList = () => {
                 >
                   Delete
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================= EDIT PRODUCT MODAL ======================= */}
+      {showEditModal && editingProduct && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-gray-700 shadow-2xl">
+            {/* Header */}
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-6 rounded-t-2xl z-10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    Edit Product
+                  </h2>
+                  <p className="text-gray-400 text-sm mt-1">
+                    Update product details
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingProduct(null);
+                    setEditError("");
+                    setEditSuccess("");
+                  }}
+                  className="p-2 hover:bg-gray-800 rounded-lg transition"
+                >
+                  <X size={20} className="text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              {editError && (
+                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+                  <AlertCircle size={20} className="text-red-400" />
+                  <span className="text-red-400">{editError}</span>
+                </div>
+              )}
+              {editSuccess && (
+                <div className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center gap-3">
+                  <CheckCircle size={20} className="text-green-400" />
+                  <span className="text-green-400">{editSuccess}</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left column */}
+                <div className="space-y-4">
+                  {/* Product ID */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Product ID <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.productId}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          productId: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., LAMBO-STO-001"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                    />
+                  </div>
+
+                  {/* Product Name */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Product Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.name}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          name: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Lamborghini Huracan STO"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition"
+                    />
+                  </div>
+
+                  {/* Categories */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Categories
+                    </label>
+                    <CategoryDropdown
+                      categories={categories}
+                      selectedIds={editFormData.categories}
+                      onChange={(ids) =>
+                        setEditFormData({ ...editFormData, categories: ids })
+                      }
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Description
+                    </label>
+                    <DescriptionBuilder
+                      items={editFormData.descriptionItems}
+                      onChange={(items) =>
+                        setEditFormData({
+                          ...editFormData,
+                          descriptionItems: items,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Right column */}
+                <div className="space-y-4">
+                  {/* Product Details */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Product Details (topic: detail format)
+                    </label>
+                    <ProductDetailsBuilder
+                      items={editFormData.productDetailsItems}
+                      onChange={(items) =>
+                        setEditFormData({
+                          ...editFormData,
+                          productDetailsItems: items,
+                        })
+                      }
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <label className="block text-gray-300 text-sm font-medium mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={editFormData.isActive}
+                      onChange={(e) =>
+                        setEditFormData({
+                          ...editFormData,
+                          isActive: e.target.value === "true",
+                        })
+                      }
+                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                    >
+                      <option value="true">Active</option>
+                      <option value="false">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 p-6 rounded-b-2xl">
+              <div className="flex items-center justify-between">
+                <p className="text-gray-500 text-sm">
+                  Fields marked with <span className="text-red-400">*</span> are
+                  required
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingProduct(null);
+                      setEditError("");
+                      setEditSuccess("");
+                    }}
+                    className="px-6 py-3 border border-gray-700 text-gray-400 rounded-xl hover:bg-gray-800 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUpdateProduct}
+                    disabled={editLoading}
+                    className="px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 text-white rounded-xl hover:from-yellow-600 hover:to-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-lg"
+                  >
+                    {editLoading ? "Updating..." : "Update Product"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
