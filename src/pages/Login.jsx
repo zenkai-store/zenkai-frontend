@@ -5,6 +5,8 @@ import {
   setCachedUserData,
   getCachedUserData,
   setStoredUserData,
+  clearCachedUserData,
+  clearStoredUserData,
 } from "../utils/auth";
 import { Mail, Lock, User, Eye, EyeOff, Chrome, ArrowLeft } from "lucide-react";
 
@@ -45,10 +47,10 @@ const Login = ({ setIsLoggedIn }) => {
   // Listen for OAuth messages from popup
   useEffect(() => {
     const handleOAuthMessage = async (event) => {
-      if (event.origin !== window.location.origin) return;
+      // Accept messages only from our backend origin
+      if (event.origin !== BASEURL) return;
 
       if (event.data.type === "AUTH_SUCCESS") {
-        // OAuth successful, get user data
         try {
           const response = await fetch(`${BASEURL}/api/auth/me`, {
             credentials: "include",
@@ -57,9 +59,14 @@ const Login = ({ setIsLoggedIn }) => {
           if (response.ok) {
             const data = await response.json();
             setCachedUserData(data.user);
-            setStoredUserData(data.user); // Persist to localStorage
+            setStoredUserData(data.user);
             setIsLoggedIn(true);
             navigate("/");
+          } else {
+            // If token invalid/expired, clear cache and redirect to login
+            clearStoredUserData();
+            clearCachedUserData();
+            setError("Authentication failed. Please try again.");
           }
         } catch (error) {
           console.error("Error fetching user after OAuth:", error);

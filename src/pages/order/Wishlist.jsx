@@ -6,6 +6,8 @@ import {
   getCachedUserData,
   getUserData,
   getStoredUserData,
+  clearCachedUserData,
+  clearStoredUserData,
 } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
@@ -105,7 +107,14 @@ const Wishlist = () => {
     } catch (err) {
       console.error("Failed to fetch wishlist:", err);
       if (err.response?.status === 401) {
-        setError("Please login to view your wishlist");
+        // Token expired or invalid – clear session and force re-login
+        clearStoredUserData();
+        clearCachedUserData();
+        setIsUserLoggedIn(false);
+        setUserName("");
+        setError("Your session has expired. Please login again.");
+        // Optionally navigate to login page:
+        // navigate("/login");
       } else {
         setError(err.response?.data?.message || "Failed to load wishlist");
       }

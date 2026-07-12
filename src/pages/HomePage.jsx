@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import axiosClient from "../utils/axiosClient";
 
 import { useCart } from "../services/cartService";
 
@@ -11,6 +12,8 @@ import {
   getUserData,
   getStoredUserData,
   setStoredUserData,
+  clearCachedUserData,
+  clearStoredUserData,
 } from "../utils/auth";
 
 // Replace these with your actual assets
@@ -135,9 +138,21 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
             setCachedUserData(data.user);
             setStoredUserData(data.user);
             setUserName(data.user.name || "User");
+          } else {
+            // Token expired – clear all
+            clearStoredUserData();
+            clearCachedUserData();
+            setLoggedIn(false);
+            setIsLoggedIn(false);
+            setUserName("");
           }
         } catch (error) {
           console.error("Backend verification error:", error);
+          clearStoredUserData();
+          clearCachedUserData();
+          setLoggedIn(false);
+          setIsLoggedIn(false);
+          setUserName("");
         }
       } else {
         try {

@@ -11,27 +11,16 @@ export const isAuthenticated = async () => {
 
     if (response.ok) {
       const data = await response.json();
-      // Update localStorage with fresh data
       setStoredUserData(data.user);
       return { authenticated: true, user: data.user };
     }
 
-    // If 401, check if we have cached data
-    if (response.status === 401) {
-      const cachedData = getStoredUserData();
-      if (cachedData) {
-        return { authenticated: true, user: cachedData };
-      }
-    }
-
+    // Token expired/invalid → clear cache
+    clearCachedUserData();
     return { authenticated: false, user: null };
   } catch (error) {
     console.error("Auth check error:", error);
-    // Fallback to localStorage if network error
-    const cachedData = getStoredUserData();
-    if (cachedData) {
-      return { authenticated: true, user: cachedData };
-    }
+    clearCachedUserData();
     return { authenticated: false, user: null };
   }
 };
@@ -49,12 +38,12 @@ export const getUserData = async () => {
       return data.user;
     }
 
-    // If API fails, use cached data
-    return getStoredUserData();
+    clearCachedUserData();
+    return null;
   } catch (error) {
     console.error("Get user data error:", error);
-    // Return cached data as fallback
-    return getStoredUserData();
+    clearCachedUserData();
+    return null;
   }
 };
 
