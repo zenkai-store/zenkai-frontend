@@ -184,7 +184,7 @@ const Admin = () => {
     },
     {
       id: "orders",
-      to: "/admin/orders",
+      to: "/admin/orders/list",
       label: "Orders",
       icon: <ShoppingBag size={20} />,
     },

@@ -17,6 +17,7 @@ import ProductsList from "./pages/products/ProductList";
 import Wishlist from "./pages/order/Wishlist";
 import ContactUs from "./pages/ContactUs";
 import Cart from "./pages/Cart";
+import OrderList from "./pages/order/OrderList";
 
 import { CartProvider } from "./context/CartContext";
 
@@ -98,6 +99,7 @@ function App() {
           <Route path="expense/list" element={<Expenses />} />
           <Route path="featured/arrivals/list" element={<NewArrivals />} />
           <Route path="categories/list" element={<Categories />} />
+          <Route path="orders/list" element={<OrderList />} />
         </Route>
 
         <Route
