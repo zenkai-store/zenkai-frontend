@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
+import { addProductFromWishlistToCart } from "../../services/addToCart";
 import {
   getCachedUserData,
   getUserData,
@@ -158,6 +159,29 @@ const Wishlist = () => {
       );
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // ====================== Move Product Default Variant to Cart From Wishlist =======
+  const handleMoveToCart = async (productId, e) => {
+    e.stopPropagation();
+
+    try {
+      // Call the API to add product from wishlist to cart
+      await addProductFromWishlistToCart(productId);
+
+      // Remove the item from the wishlist UI (since it's now in cart)
+      setWishlist((prev) =>
+        prev.filter((item) => item.productId !== productId),
+      );
+      setTotalItems((prev) => prev - 1);
+      showNotification("Moved to cart successfully!");
+    } catch (err) {
+      console.error("Failed to move to cart:", err);
+      showNotification(
+        err.response?.data?.message || "Failed to move to cart",
+        "error",
+      );
     }
   };
 
@@ -497,12 +521,22 @@ const Wishlist = () => {
                   Out of Stock
                 </button>
               )}
+
+              {/* New: Move to Cart button (always visible if logged in) */}
+              <button
+                onClick={(e) => handleMoveToCart(item.productId, e)}
+                className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 px-4 py-2.5 rounded-full text-sm font-medium hover:bg-blue-100 transition active:scale-95"
+              >
+                <ShoppingCart size={15} />
+                <span className="hidden sm:inline">Move to Cart</span>
+              </button>
+
               <button
                 onClick={(e) => handleRemoveFromWishlist(item.productId, e)}
-                disabled={isDeleting}
+                disabled={deletingId === item.productId}
                 className="flex items-center justify-center gap-2 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-full text-sm font-medium hover:bg-red-50 hover:text-red-500 transition active:scale-95 disabled:opacity-50"
               >
-                {isDeleting ? (
+                {deletingId === item.productId ? (
                   <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                 ) : (
                   <Trash2 size={15} />

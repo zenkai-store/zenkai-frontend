@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
+import { addVariantToCart } from "../../services/addToCart";
 import BASEURL from "../../config/baseURL";
 
 import {
@@ -99,6 +100,8 @@ const ListProducts = () => {
 
   // Filter panel (mobile)
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+  const [addingProductId, setAddingProductId] = useState(null);
 
   const [loggedIn, setLoggedIn] = useState(false);
 
@@ -334,19 +337,41 @@ const ListProducts = () => {
       return;
     }
 
-    const result = await addItemToCart(
-      productId,
-      variantId,
-      1,
-      (response) => {
-        showNotification(`${productName} added to cart!`, "success");
-      },
-      (errorMessage) => {
-        showNotification(errorMessage, "error");
-      },
-    );
+    // If variantId is not provided, try to get it from the product media
+    let finalVariantId = variantId;
+    if (!finalVariantId) {
+      const product = products.find((p) => p._id === productId);
+      if (product?.media?.variantId) {
+        finalVariantId = product.media.variantId;
+      }
+    }
 
-    return result;
+    if (!finalVariantId) {
+      showNotification("Variant not found for this product", "error");
+      return;
+    }
+
+    setAddingProductId(productId);
+
+    try {
+      const result = await addItemToCart(
+        productId,
+        finalVariantId,
+        1,
+        (response) => {
+          showNotification(`${productName} added to cart!`, "success");
+        },
+        (errorMessage) => {
+          showNotification(errorMessage, "error");
+        },
+      );
+      return result;
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      showNotification("Failed to add to cart", "error");
+    } finally {
+      setAddingProductId(null);
+    }
   };
 
   // ======================= NOTIFICATION =======================
@@ -576,19 +601,19 @@ const ListProducts = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleAddToCart(
-                  product._id,
-                  null, // null variantId will use default variant
-                  product.name,
-                  e,
-                );
+                const variantId = product.media?.variantId || null;
+                handleAddToCart(product._id, variantId, product.name, e);
               }}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || addingProductId === product._id}
               className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm text-white py-2.5 rounded-xl font-medium text-xs opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="flex items-center justify-center gap-1.5">
-                <ShoppingCart size={13} />
-                Add to Cart
+                {addingProductId === product._id ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <ShoppingCart size={13} />
+                )}
+                {addingProductId === product._id ? "Adding..." : "Add to Cart"}
               </span>
             </button>
           )}
@@ -665,18 +690,18 @@ const ListProducts = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleAddToCart(
-                  product._id,
-                  null, // null variantId will use default variant
-                  product.name,
-                  e,
-                );
+                const variantId = product.media?.variantId || null;
+                handleAddToCart(product._id, variantId, product.name, e);
               }}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || addingProductId === product._id}
               className="mt-3 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-500/25 w-fit active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ShoppingCart size={14} />
-              Add to Cart
+              {addingProductId === product._id ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <ShoppingCart size={14} />
+              )}
+              {addingProductId === product._id ? "Adding..." : "Add to Cart"}
             </button>
           )}
         </div>

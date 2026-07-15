@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
+import { addVariantToCart } from "../../services/addToCart";
+import { useCart } from "../../services/cartService";
 import {
   getCachedUserData,
   getUserData,
@@ -73,6 +75,8 @@ const CategoryProducts = () => {
 
   // Wishlist
   const [wishlistedItems, setWishlistedItems] = useState(new Set());
+
+  const [addingProductId, setAddingProductId] = useState(null);
 
   // Notification
   const [notification, setNotification] = useState(null);
@@ -263,13 +267,37 @@ const CategoryProducts = () => {
   };
 
   // ======================= ADD TO CART =======================
-  const handleAddToCart = (product, e) => {
+  const handleAddToCart = async (productId, variantId, productName, e) => {
     e.stopPropagation();
+
     if (!isUserLoggedIn) {
       showNotification("Please login as a user to add items to cart", "error");
       return;
     }
-    showNotification("Add to cart functionality coming soon!");
+
+    if (!variantId) {
+      showNotification("Variant not found for this product", "error");
+      return;
+    }
+
+    setAddingProductId(productId);
+
+    try {
+      const response = await addVariantToCart(variantId, 1);
+      if (response.data.success) {
+        showNotification(`${productName} added to cart!`, "success");
+        // Optionally update cart count if you're using useCart
+        // fetchCart(); // if you have useCart and want to update count
+      }
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      showNotification(
+        err.response?.data?.message || "Failed to add to cart",
+        "error",
+      );
+    } finally {
+      setAddingProductId(null);
+    }
   };
 
   // ======================= NOTIFICATION =======================
@@ -475,12 +503,23 @@ const CategoryProducts = () => {
             <>
               {isUserLoggedIn ? (
                 <button
-                  onClick={(e) => handleAddToCart(product, e)}
-                  className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm text-white py-2.5 rounded-xl font-medium text-sm opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const variantId = product.image?.variantId || null;
+                    handleAddToCart(product._id, variantId, product.name, e);
+                  }}
+                  disabled={addingProductId === product._id}
+                  className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm text-white py-2.5 rounded-xl font-medium text-sm opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-black disabled:opacity-50"
                 >
                   <span className="flex items-center justify-center gap-2">
-                    <ShoppingCart size={14} />
-                    Add to Cart
+                    {addingProductId === product._id ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <ShoppingCart size={14} />
+                    )}
+                    {addingProductId === product._id
+                      ? "Adding..."
+                      : "Add to Cart"}
                   </span>
                 </button>
               ) : (
@@ -553,11 +592,22 @@ const CategoryProducts = () => {
             <>
               {isUserLoggedIn ? (
                 <button
-                  onClick={(e) => handleAddToCart(product, e)}
-                  className="mt-3 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-500/25 w-fit"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const variantId = product.image?.variantId || null;
+                    handleAddToCart(product._id, variantId, product.name, e);
+                  }}
+                  disabled={addingProductId === product._id}
+                  className="mt-3 flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition shadow-lg shadow-red-500/25 w-fit disabled:opacity-50"
                 >
-                  <ShoppingCart size={14} />
-                  Add to Cart
+                  {addingProductId === product._id ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <ShoppingCart size={14} />
+                  )}
+                  {addingProductId === product._id
+                    ? "Adding..."
+                    : "Add to Cart"}
                 </button>
               ) : (
                 <Link

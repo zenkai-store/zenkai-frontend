@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
+import { addVariantToCart } from "../../services/addToCart";
 import {
   getCachedUserData,
   getUserData,
@@ -62,6 +63,8 @@ const AboutProduct = () => {
   // Variant selection
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
+
+  const [cartAdding, setCartAdding] = useState(false);
 
   // Image gallery
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -177,6 +180,36 @@ const AboutProduct = () => {
       setIsWishlisted(variant.isWishlisted || false);
       setActiveImageIndex(0);
       setQuantity(1);
+    }
+  };
+
+  // ====================== Add Variant to Cart =================
+  const handleAddToCart = async () => {
+    if (!selectedVariant?._id) {
+      showNotification("No variant selected", "error");
+      return;
+    }
+
+    if (isOutOfStock) {
+      showNotification("Product is out of stock", "error");
+      return;
+    }
+
+    setCartAdding(true);
+
+    try {
+      const response = await addVariantToCart(selectedVariant._id, quantity);
+      if (response.data.success) {
+        showNotification(`${product.name} added to cart!`, "success");
+      }
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      showNotification(
+        err.response?.data?.message || "Failed to add to cart",
+        "error",
+      );
+    } finally {
+      setCartAdding(false);
     }
   };
 
@@ -741,18 +774,24 @@ const AboutProduct = () => {
               {isLoggedIn ? (
                 <>
                   <button
-                    disabled={isOutOfStock}
-                    onClick={() =>
-                      showNotification("Add to cart functionality coming soon!")
-                    }
+                    disabled={isOutOfStock || cartAdding}
+                    onClick={handleAddToCart}
                     className={`flex-1 flex items-center justify-center gap-2 px-8 py-4 rounded-full font-semibold text-lg transition shadow-lg ${
-                      isOutOfStock
+                      isOutOfStock || cartAdding
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-red-500 text-white hover:bg-red-600 shadow-red-500/25"
                     }`}
                   >
-                    <ShoppingCart size={22} />
-                    {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+                    {cartAdding ? (
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <ShoppingCart size={22} />
+                    )}
+                    {isOutOfStock
+                      ? "Out of Stock"
+                      : cartAdding
+                        ? "Adding..."
+                        : "Add to Cart"}
                   </button>
                   <button
                     disabled={isOutOfStock}
