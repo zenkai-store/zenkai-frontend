@@ -194,8 +194,18 @@ const Address = () => {
       state,
       pincode,
     } = formData;
-    const query =
-      `${addressLine1}, ${addressLine2}, ${landmark}, ${city}, ${district}, ${state}, ${pincode}`.trim();
+    const query = [
+      addressLine1,
+      addressLine2,
+      landmark,
+      city,
+      district,
+      state,
+      pincode,
+      "India", // Helps Nominatim narrow the search
+    ]
+      .filter((item) => item && item.trim() !== "")
+      .join(", ");
 
     if (!query) {
       showNotification(

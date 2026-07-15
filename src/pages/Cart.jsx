@@ -21,6 +21,7 @@ import {
   Loader,
   Sparkles,
   Gift,
+  MapPin,
 } from "lucide-react";
 import { useCart, moveFromWishlistToCart } from "../services/cartService";
 import {
@@ -55,6 +56,12 @@ const Cart = () => {
   const [appliedCoupon, setAppliedCoupon] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
+
+  // ======================= ADDRESS STATE =======================
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [addressError, setAddressError] = useState("");
 
   // ======================= AUTH CHECK =======================
   useEffect(() => {
@@ -211,6 +218,41 @@ const Cart = () => {
       maximumFractionDigits: 0,
     }).format(price);
   };
+
+  // ======================= FETCH ADDRESSES =======================
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!loggedIn) return;
+      try {
+        setLoadingAddresses(true);
+        setAddressError("");
+        const response = await fetch(`${BASEURL}/api/address`, {
+          credentials: "include",
+        });
+        const data = await response.json();
+        if (data.success) {
+          const sorted = data.data.sort((a, b) => {
+            if (a.isDefault) return -1;
+            if (b.isDefault) return 1;
+            return 0;
+          });
+          setAddresses(sorted);
+          // Select default address or first
+          const defaultAddr = sorted.find((addr) => addr.isDefault);
+          setSelectedAddressId(defaultAddr?._id || sorted[0]?._id || null);
+        } else {
+          setAddressError(data.message || "Failed to load addresses");
+        }
+      } catch (err) {
+        console.error("Address fetch error:", err);
+        setAddressError("Could not load addresses");
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    fetchAddresses();
+  }, [loggedIn]);
 
   // ======================= CALCULATIONS =======================
   const subtotal =
@@ -842,6 +884,101 @@ const Cart = () => {
                   </div>
                 </div>
 
+                {/* ======================= DELIVERY ADDRESS ======================= */}
+                <div className="border-t border-gray-100 pt-4 mt-4">
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    <MapPin size={16} className="inline mr-1.5" />
+                    Delivery Address
+                  </label>
+
+                  {loadingAddresses ? (
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <Loader size={14} className="animate-spin" />
+                      Loading addresses...
+                    </div>
+                  ) : addressError ? (
+                    <div className="text-sm text-red-500">{addressError}</div>
+                  ) : addresses.length === 0 ? (
+                    <div className="flex flex-col items-start gap-2">
+                      <p className="text-sm text-gray-500">
+                        No saved addresses
+                      </p>
+                      <button
+                        onClick={() => navigate("/address")}
+                        className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-600 font-medium transition"
+                      >
+                        <Plus size={16} />
+                        Add New Address
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <select
+                        value={selectedAddressId || ""}
+                        onChange={(e) => setSelectedAddressId(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/10 bg-white"
+                      >
+                        {addresses.map((addr) => (
+                          <option key={addr._id} value={addr._id}>
+                            {addr.fullName} • {addr.addressLine1}, {addr.city},{" "}
+                            {addr.state} - {addr.pincode}
+                            {addr.isDefault && " (Default)"}
+                          </option>
+                        ))}
+                      </select>
+
+                      {/* Show selected address details */}
+                      {selectedAddressId && (
+                        <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs text-gray-600 space-y-1">
+                          {(() => {
+                            const selected = addresses.find(
+                              (a) => a._id === selectedAddressId,
+                            );
+                            if (!selected) return null;
+                            return (
+                              <>
+                                <p className="font-medium text-gray-900">
+                                  {selected.fullName}
+                                </p>
+                                <p>
+                                  {selected.addressLine1}
+                                  {selected.addressLine2 &&
+                                    `, ${selected.addressLine2}`}
+                                  {selected.landmark &&
+                                    `, ${selected.landmark}`}
+                                </p>
+                                <p>
+                                  {selected.city}, {selected.district},{" "}
+                                  {selected.state} - {selected.pincode}
+                                </p>
+                                <p>Phone: {selected.phone}</p>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between mt-2">
+                        <button
+                          onClick={() => navigate("/address")}
+                          className="text-xs text-red-500 hover:text-red-600 font-medium flex items-center gap-1"
+                        >
+                          <Plus size={14} />
+                          Add New Address
+                        </button>
+                        {selectedAddressId && (
+                          <button
+                            onClick={() => navigate(`/address`)}
+                            className="text-xs text-gray-400 hover:text-gray-600 transition"
+                          >
+                            Manage Addresses
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 {/* Total */}
                 <div className="border-t border-gray-100 mt-6 pt-4">
                   <div className="flex justify-between items-center">
@@ -867,8 +1004,18 @@ const Cart = () => {
                 {/* Checkout Button */}
                 <button
                   onClick={() => {
+                    if (!selectedAddressId) {
+                      showNotification(
+                        "Please select a delivery address",
+                        "error",
+                      );
+                      return;
+                    }
                     if (cartSummary?.isEligibleForCheckout) {
-                      navigate("/checkout");
+                      // Pass selected address ID to checkout
+                      navigate("/checkout", {
+                        state: { addressId: selectedAddressId },
+                      });
                     } else {
                       showNotification(
                         cartSummary?.stockIssues?.[0] ||
