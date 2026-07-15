@@ -18,6 +18,8 @@ import Wishlist from "./pages/order/Wishlist";
 import ContactUs from "./pages/ContactUs";
 import Cart from "./pages/Cart";
 import OrderList from "./pages/order/OrderList";
+import Address from "./pages/user/Address";
+import Profile from "./pages/user/Profile";
 
 import { CartProvider } from "./context/CartContext";
 
@@ -81,6 +83,8 @@ function App() {
         <Route path="/wishlist" element={<Wishlist />} />
         <Route path="/contact" element={<ContactUs />} />
         <Route path="/cart" element={<Cart />} />
+        <Route path="/address" element={<Address />} />
+        <Route path="/profile" element={<Profile />} />
 
         {/* Protected Admin Routes - All wrapped in Admin Layout */}
         <Route
