@@ -20,6 +20,7 @@ import Cart from "./pages/Cart";
 import OrderList from "./pages/order/OrderList";
 import Address from "./pages/user/Address";
 import Profile from "./pages/user/Profile";
+import OrderConfirmation from "./pages/order/OrderConfirmation";
 
 import { CartProvider } from "./context/CartContext";
 
@@ -85,6 +86,10 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/address" element={<Address />} />
         <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/order-confirmation/:orderId"
+          element={<OrderConfirmation />}
+        />
 
         {/* Protected Admin Routes - All wrapped in Admin Layout */}
         <Route

@@ -56,12 +56,26 @@ const Cart = () => {
   const [appliedCoupon, setAppliedCoupon] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
+  const [loggedInUser, setLoggedInUser] = useState(null);
 
   // ======================= ADDRESS STATE =======================
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [loadingAddresses, setLoadingAddresses] = useState(false);
   const [addressError, setAddressError] = useState("");
+
+  const [processingPayment, setProcessingPayment] = useState(false);
+
+  // ======================= LOAD RAZORPAY SCRIPT =======================
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
   // ======================= AUTH CHECK =======================
   useEffect(() => {
@@ -81,6 +95,7 @@ const Cart = () => {
             setCachedUserData(data.user);
             setStoredUserData(data.user);
             setLoggedIn(true);
+            setLoggedInUser(data.user);
           } else {
             setLoggedIn(false);
             navigate("/login");
@@ -264,6 +279,134 @@ const Cart = () => {
 
   // Calculate savings
   const totalSavings = discount + (shipping === 0 ? 150 : 0); // Assuming ₹150 shipping saved
+
+  // ======================= HANDLE CHECKOUT =======================
+  const handleCheckout = async () => {
+    if (!selectedAddressId) {
+      showNotification("Please select a delivery address", "error");
+      return;
+    }
+
+    if (!cartSummary?.isEligibleForCheckout) {
+      showNotification(
+        cartSummary?.stockIssues?.[0] ||
+          "Some items in your cart are out of stock. Please remove them to proceed.",
+        "error",
+      );
+      return;
+    }
+
+    setProcessingPayment(true);
+
+    try {
+      // Step 1: Create order
+      const createOrderResponse = await fetch(
+        `${BASEURL}/api/payment/create-order`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            addressId: selectedAddressId,
+            paymentMethod: "razorpay",
+          }),
+        },
+      );
+
+      const createOrderData = await createOrderResponse.json();
+
+      if (!createOrderData.success) {
+        throw new Error(createOrderData.message || "Failed to create order");
+      }
+
+      const {
+        razorpayOrderId,
+        amount,
+        key,
+        orderId,
+        orderNumber,
+        requiresPayment,
+      } = createOrderData;
+
+      if (!requiresPayment) {
+        // For COD or other non-payment methods, navigate directly
+        navigate(`/order-confirmation/${orderId}`);
+        return;
+      }
+
+      // Step 2: Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error("Payment gateway failed to load. Please try again.");
+      }
+
+      // Step 3: Open Razorpay checkout
+      const options = {
+        key: key,
+        amount: amount,
+        currency: "INR",
+        name: "Zenkai.co",
+        description: `Order #${orderNumber}`,
+        order_id: razorpayOrderId,
+        handler: async function (response) {
+          // Step 4: Verify payment
+          try {
+            const verifyResponse = await fetch(
+              `${BASEURL}/api/payment/verify`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              },
+            );
+
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyData.success) {
+              throw new Error(
+                verifyData.message || "Payment verification failed",
+              );
+            }
+
+            // Payment successful – navigate to order confirmation
+            showNotification("Payment successful! Order placed.", "success");
+            navigate(`/order-confirmation/${verifyData.orderId}`);
+          } catch (err) {
+            console.error("Payment verification error:", err);
+            showNotification(
+              err.message || "Payment verification failed",
+              "error",
+            );
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            showNotification("Payment cancelled", "error");
+          },
+        },
+        prefill: {
+          email: loggedInUser?.email || "",
+          contact: loggedInUser?.phone || "",
+        },
+        theme: {
+          color: "#EF4444",
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    } catch (err) {
+      console.error("Checkout error:", err);
+      showNotification(err.message || "Failed to initiate checkout", "error");
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
 
   // ======================= RENDER LOADING SKELETON =======================
   const CartSkeleton = () => (
@@ -1003,33 +1146,24 @@ const Cart = () => {
 
                 {/* Checkout Button */}
                 <button
-                  onClick={() => {
-                    if (!selectedAddressId) {
-                      showNotification(
-                        "Please select a delivery address",
-                        "error",
-                      );
-                      return;
-                    }
-                    if (cartSummary?.isEligibleForCheckout) {
-                      // Pass selected address ID to checkout
-                      navigate("/checkout", {
-                        state: { addressId: selectedAddressId },
-                      });
-                    } else {
-                      showNotification(
-                        cartSummary?.stockIssues?.[0] ||
-                          "Some items in your cart are out of stock. Please remove them to proceed.",
-                        "error",
-                      );
-                    }
-                  }}
-                  disabled={!cartSummary?.isEligibleForCheckout}
+                  onClick={handleCheckout}
+                  disabled={
+                    !cartSummary?.isEligibleForCheckout || processingPayment
+                  }
                   className="w-full mt-4 bg-gradient-to-r from-red-500 to-red-600 text-white py-3.5 rounded-full font-semibold hover:from-red-600 hover:to-red-700 transition shadow-lg shadow-red-500/25 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  <ShoppingCart size={18} />
-                  Proceed to Checkout
-                  <ChevronRight size={18} />
+                  {processingPayment ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={18} />
+                      Proceed to Checkout
+                      <ChevronRight size={18} />
+                    </>
+                  )}
                 </button>
 
                 {/* Stock Issues Warning */}
