@@ -21,6 +21,8 @@ import OrderList from "./pages/order/OrderList";
 import Address from "./pages/user/Address";
 import Profile from "./pages/user/Profile";
 import OrderConfirmation from "./pages/order/OrderConfirmation";
+import UserOrderDetails from "./pages/order/UserOrderDetails";
+import UserOrders from "./pages/order/UserOrders";
 
 import { CartProvider } from "./context/CartContext";
 
@@ -90,6 +92,8 @@ function App() {
           path="/order-confirmation/:orderId"
           element={<OrderConfirmation />}
         />
+        <Route path="/orders" element={<UserOrders />} />
+        <Route path="/orders/:orderId" element={<UserOrderDetails />} />
 
         {/* Protected Admin Routes - All wrapped in Admin Layout */}
         <Route

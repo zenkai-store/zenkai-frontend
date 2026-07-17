@@ -651,7 +651,10 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
                       >
                         Addresses
                       </button>
-                      <button className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition">
+                      <button
+                        onClick={() => navigate("/orders")}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 transition"
+                      >
                         Orders
                       </button>
                       <button
