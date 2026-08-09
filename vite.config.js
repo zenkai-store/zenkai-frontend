@@ -9,5 +9,12 @@ export default defineConfig({
   server: {
     https: true,
     port: 5173,
+    proxy: {
+      "/api": {
+        target: "https://zenkai-backend.onrender.com",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
 });
