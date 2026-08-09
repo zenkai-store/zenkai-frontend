@@ -119,28 +119,14 @@ const Login = ({ setIsLoggedIn }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // After successful login/signup, get user data
-        const meResponse = await fetch(`${BASEURL}/api/auth/me`, {
-          credentials: "include",
-        });
-
-        if (meResponse.ok) {
-          const userData = await meResponse.json();
-          setCachedUserData(userData.user);
-          setStoredUserData(userData.user); // Persist to localStorage
-          setIsLoggedIn(true);
-          navigate("/");
-        } else {
-          // If can't get user data, still consider logged in
-          const userData = {
-            email: formData.email,
-            name: formData.name || "User",
-          };
-          setCachedUserData(userData);
-          setStoredUserData(userData); // Persist to localStorage
-          setIsLoggedIn(true);
-          navigate("/");
-        }
+        // Use user data from the login/signup response directly.
+        // Safari blocks the cross-origin cookie on the immediately following
+        // /api/auth/me request, so we avoid that round-trip entirely.
+        const userData = data.user || { email: formData.email, name: formData.name || "User" };
+        setCachedUserData(userData);
+        setStoredUserData(userData);
+        setIsLoggedIn(true);
+        navigate("/");
       } else {
         setError(data.message || "Authentication failed");
       }

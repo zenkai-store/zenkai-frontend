@@ -1,6 +1,7 @@
 import BASEURL from "../config/baseURL";
 
 const AUTH_STORAGE_KEY = "zenkai_user_data";
+const AUTH_TIMESTAMP_KEY = "zenkai_user_data_ts";
 
 // Check if user is authenticated by verifying with backend
 export const isAuthenticated = async () => {
@@ -51,6 +52,7 @@ export const getUserData = async () => {
 export const setStoredUserData = (userData) => {
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
+    localStorage.setItem(AUTH_TIMESTAMP_KEY, Date.now().toString());
   } catch (error) {
     console.error("Error storing user data:", error);
   }
@@ -69,8 +71,21 @@ export const getStoredUserData = () => {
 export const clearStoredUserData = () => {
   try {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_TIMESTAMP_KEY);
   } catch (error) {
     console.error("Error clearing stored user data:", error);
+  }
+};
+
+// Returns true if user data was stored within the last `ms` milliseconds.
+// Used to avoid wiping a freshly-set session before the browser has had a
+// chance to send the auth cookie on the first cross-origin request.
+export const isStoredDataFresh = (ms = 10000) => {
+  try {
+    const ts = localStorage.getItem(AUTH_TIMESTAMP_KEY);
+    return ts ? Date.now() - parseInt(ts, 10) < ms : false;
+  } catch {
+    return false;
   }
 };
 

@@ -25,6 +25,7 @@ import UserOrderDetails from "./pages/order/UserOrderDetails";
 import UserOrders from "./pages/order/UserOrders";
 
 import { CartProvider } from "./context/CartContext";
+import { getStoredUserData } from "./utils/auth";
 
 // Protected Route Component for Admin
 const ProtectedAdminRoute = ({ children }) => {
@@ -63,7 +64,7 @@ const ProtectedAdminRoute = ({ children }) => {
 };
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!getStoredUserData());
 
   return (
     <CartProvider>

@@ -9,11 +9,11 @@ import {
   logout,
   getCachedUserData,
   setCachedUserData,
-  getUserData,
   getStoredUserData,
   setStoredUserData,
   clearCachedUserData,
   clearStoredUserData,
+  isStoredDataFresh,
 } from "../utils/auth";
 
 // Replace these with your actual assets
@@ -93,9 +93,9 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
   // Sync the local loggedIn state with the prop from App
   useEffect(() => {
     if (propIsLoggedIn) {
-      const userData = getUserData();
+      const storedData = getStoredUserData();
       setLoggedIn(true);
-      setUserName(userData?.name || userData?.user?.name || "User");
+      setUserName(storedData?.name || storedData?.user?.name || "User");
     } else {
       setLoggedIn(false);
       setUserName("");
@@ -123,6 +123,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
       const storedData = getStoredUserData();
 
       if (storedData) {
+        // Immediately show logged-in state from localStorage
         setCachedUserData(storedData);
         setLoggedIn(true);
         setIsLoggedIn(true);
@@ -138,21 +139,21 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
             setCachedUserData(data.user);
             setStoredUserData(data.user);
             setUserName(data.user.name || "User");
-          } else {
-            // Token expired – clear all
+          } else if (response.status === 401 && !isStoredDataFresh(10000)) {
+            // Only clear on 401 if the stored data is not fresh (i.e., not just
+            // set after login). Safari blocks cross-origin cookies on the first
+            // request after login, causing a false 401 before the cookie is
+            // established — we must not wipe a legitimately fresh session.
             clearStoredUserData();
             clearCachedUserData();
             setLoggedIn(false);
             setIsLoggedIn(false);
             setUserName("");
           }
+          // For other non-ok statuses (5xx, etc.), keep the user logged in
         } catch (error) {
+          // Network error — keep user logged in from localStorage; don't clear
           console.error("Backend verification error:", error);
-          clearStoredUserData();
-          clearCachedUserData();
-          setLoggedIn(false);
-          setIsLoggedIn(false);
-          setUserName("");
         }
       } else {
         try {
