@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../utils/axiosClient";
 import { getStoredUserData } from "../../utils/auth";
 
 import {
@@ -48,8 +47,8 @@ const UserOrders = () => {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.get(
-        `${BASEURL}/api/orders?page=${page}&limit=${limit}`,
+      const response = await axiosClient.get(
+        `/api/orders?page=${page}&limit=${limit}`,
         { withCredentials: true },
       );
 

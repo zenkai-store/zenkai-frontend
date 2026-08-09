@@ -1,8 +1,8 @@
+import BASEURL from "../../config/baseURL";
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
-import { getStoredUserData } from "../../utils/auth";
+import axiosClient from "../../utils/axiosClient";
+import { getStoredUserData, getAuthHeader } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
 
@@ -48,7 +48,7 @@ const Profile = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${BASEURL}/api/user/profile`, {
+      const response = await axiosClient.get(`/api/user/profile`, {
         withCredentials: true,
       });
 
@@ -84,8 +84,8 @@ const Profile = () => {
 
     try {
       setSubmitting(true);
-      const response = await axios.put(
-        `${BASEURL}/api/user/profile`,
+      const response = await axiosClient.put(
+        `/api/user/profile`,
         { name: editName.trim() },
         { withCredentials: true },
       );
@@ -113,6 +113,7 @@ const Profile = () => {
       const response = await fetch(`${BASEURL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
+        headers: getAuthHeader(),
       });
 
       if (response.ok) {

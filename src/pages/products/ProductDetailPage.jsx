@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../utils/axiosClient";
 import {
   ArrowLeft,
   Package,
@@ -137,7 +136,7 @@ const ProductDetailPage = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${BASEURL}/api/products/${productId}`, {
+      const response = await axiosClient.get(`/api/products/${productId}`, {
         withCredentials: true,
       });
 
@@ -165,7 +164,7 @@ const ProductDetailPage = () => {
   // ======================= FETCH CATEGORIES ========================
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${BASEURL}/api/admin/categories`, {
+      const response = await axiosClient.get(`/api/admin/categories`, {
         withCredentials: false,
       });
       if (response.data.success) {
@@ -180,8 +179,8 @@ const ProductDetailPage = () => {
   const fetchVariants = async () => {
     try {
       setLoadingVariants(true);
-      const response = await axios.get(
-        `${BASEURL}/api/admin/products/${productId}/variants`,
+      const response = await axiosClient.get(
+        `/api/admin/products/${productId}/variants`,
         { withCredentials: true },
       );
 
@@ -279,8 +278,8 @@ const ProductDetailPage = () => {
         formDataToSend.append("media", file);
       });
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/products/${productId}/variants`,
+      const response = await axiosClient.post(
+        `/api/admin/products/${productId}/variants`,
         formDataToSend,
         {
           withCredentials: true,
@@ -350,8 +349,8 @@ const ProductDetailPage = () => {
         formData.append("media", file);
       });
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/products/${productId}/media`,
+      const response = await axiosClient.post(
+        `/api/admin/products/${productId}/media`,
         formData,
         {
           withCredentials: true,
@@ -382,8 +381,8 @@ const ProductDetailPage = () => {
       setCreating(true);
       setActionError("");
 
-      const response = await axios.put(
-        `${BASEURL}/api/admin/products/${productId}`,
+      const response = await axiosClient.put(
+        `/api/admin/products/${productId}`,
         {
           name: editFormData.name,
           isActive: editFormData.isActive,
@@ -413,7 +412,7 @@ const ProductDetailPage = () => {
     try {
       setCreating(true);
 
-      await axios.delete(`${BASEURL}/api/admin/products/${productId}`, {
+      await axiosClient.delete(`/api/admin/products/${productId}`, {
         withCredentials: true,
       });
 
@@ -434,8 +433,8 @@ const ProductDetailPage = () => {
       return;
 
     try {
-      await axios.delete(
-        `${BASEURL}/api/admin/products/${productId}/variants/${variantId}`,
+      await axiosClient.delete(
+        `/api/admin/products/${productId}/variants/${variantId}`,
         { withCredentials: true },
       );
       fetchProductDetails();
@@ -452,8 +451,8 @@ const ProductDetailPage = () => {
       setVariantEditError("");
       setVariantEditSuccess("");
 
-      const response = await axios.put(
-        `${BASEURL}/api/admin/products/${productId}/variants/${editingVariant._id}`,
+      const response = await axiosClient.put(
+        `/api/admin/products/${productId}/variants/${editingVariant._id}`,
         {
           color: variantEditFormData.color,
           pricing: variantEditFormData.pricing,
@@ -549,8 +548,8 @@ const ProductDetailPage = () => {
         formData.append("media", file);
       });
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/products/${productId}/variants/${selectedVariantForMedia._id}/media`,
+      const response = await axiosClient.post(
+        `/api/admin/products/${productId}/variants/${selectedVariantForMedia._id}/media`,
         formData,
         {
           withCredentials: true,
@@ -586,8 +585,8 @@ const ProductDetailPage = () => {
       // URL-encode the public_id to handle slashes in Cloudinary path
       const encodedPublicId = encodeURIComponent(publicId);
 
-      const response = await axios.delete(
-        `${BASEURL}/api/admin/products/${productId}/variants/${variantId}/media/${encodedPublicId}`,
+      const response = await axiosClient.delete(
+        `/api/admin/products/${productId}/variants/${variantId}/media/${encodedPublicId}`,
         { withCredentials: true },
       );
 

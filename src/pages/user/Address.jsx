@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../utils/axiosClient";
 import { getStoredUserData } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
@@ -118,7 +117,7 @@ const Address = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${BASEURL}/api/address`, {
+      const response = await axiosClient.get(`/api/address`, {
         withCredentials: true,
       });
 
@@ -249,7 +248,7 @@ const Address = () => {
         pincode: formData.pincode.toString(),
       };
 
-      const response = await axios.post(`${BASEURL}/api/address`, payload, {
+      const response = await axiosClient.post(`/api/address`, payload, {
         withCredentials: true,
       });
 
@@ -284,8 +283,8 @@ const Address = () => {
         pincode: editFormData.pincode.toString(),
       };
 
-      const response = await axios.patch(
-        `${BASEURL}/api/address/${editingAddress._id}`,
+      const response = await axiosClient.patch(
+        `/api/address/${editingAddress._id}`,
         payload,
         { withCredentials: true },
       );
@@ -313,7 +312,7 @@ const Address = () => {
 
     try {
       setDeletingId(id);
-      const response = await axios.delete(`${BASEURL}/api/address/${id}`, {
+      const response = await axiosClient.delete(`/api/address/${id}`, {
         withCredentials: true,
       });
 
@@ -334,8 +333,8 @@ const Address = () => {
 
   const handleSetDefault = async (id) => {
     try {
-      const response = await axios.patch(
-        `${BASEURL}/api/address/${id}/default`,
+      const response = await axiosClient.patch(
+        `/api/address/${id}/default`,
         {},
         { withCredentials: true },
       );

@@ -7,6 +7,7 @@ import { useCart } from "../../services/cartService";
 import {
   getCachedUserData,
   getStoredUserData,
+  getAuthHeader,
 } from "../../utils/auth";
 
 // Assets
@@ -351,6 +352,7 @@ const CategoryProducts = () => {
       await fetch(`${BASEURL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
+        headers: getAuthHeader(),
       });
     } catch (error) {
       console.error("Logout error:", error);

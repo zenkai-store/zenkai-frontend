@@ -1,9 +1,9 @@
+import BASEURL from "../../config/baseURL";
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../utils/axiosClient";
 import { addProductFromWishlistToCart } from "../../services/addToCart";
-import { getCachedUserData, getStoredUserData } from "../../utils/auth";
+import { getCachedUserData, getStoredUserData, getAuthHeader } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
 
@@ -66,8 +66,8 @@ const Wishlist = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(
-        `${BASEURL}/api/wishlist?page=${currentPage}&limit=20`,
+      const response = await axiosClient.get(
+        `/api/wishlist?page=${currentPage}&limit=20`,
         {
           withCredentials: true,
         },
@@ -103,8 +103,8 @@ const Wishlist = () => {
     try {
       setDeletingId(productId);
 
-      const response = await axios.delete(
-        `${BASEURL}/api/wishlist/${productId}`,
+      const response = await axiosClient.delete(
+        `/api/wishlist/${productId}`,
         { withCredentials: true },
       );
 
@@ -201,6 +201,7 @@ const Wishlist = () => {
       const response = await fetch(`${BASEURL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
+        headers: getAuthHeader(),
       });
 
       if (response.ok) {

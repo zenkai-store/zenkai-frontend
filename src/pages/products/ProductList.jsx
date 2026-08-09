@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import axiosClient from "../../utils/axiosClient";
 import { useNavigate } from "react-router-dom";
-import BASEURL from "../../config/baseURL";
 import {
   Search,
   Plus,
@@ -129,8 +128,8 @@ const ProductsList = () => {
 
       // 👉 If category filter is active → use filter API
       if (filterCategory) {
-        const response = await axios.get(
-          `${BASEURL}/api/products/category/${filterCategory}`,
+        const response = await axiosClient.get(
+          `/api/products/category/${filterCategory}`,
           {
             params: { page, limit: 20 },
             withCredentials: true,
@@ -146,7 +145,7 @@ const ProductsList = () => {
       }
 
       // 👉 Otherwise normal fetch
-      const response = await axios.get(`${BASEURL}/api/products`, {
+      const response = await axiosClient.get(`/api/products`, {
         params: { page, limit: 20 },
         withCredentials: true,
       });
@@ -165,7 +164,7 @@ const ProductsList = () => {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${BASEURL}/api/admin/categories`, {
+      const response = await axiosClient.get(`/api/admin/categories`, {
         withCredentials: false,
       });
       if (response.data.success) {
@@ -198,7 +197,7 @@ const ProductsList = () => {
       setSearching(true);
       setIsSearchMode(true);
 
-      const response = await axios.get(`${BASEURL}/api/products/search`, {
+      const response = await axiosClient.get(`/api/products/search`, {
         params: { q: searchQuery.trim(), page: 1, limit: 20 },
         withCredentials: true,
       });
@@ -284,8 +283,8 @@ const ProductsList = () => {
         formDataToSend.append("media", file);
       });
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/products`,
+      const response = await axiosClient.post(
+        `/api/admin/products`,
         formDataToSend,
         {
           withCredentials: true,
@@ -371,8 +370,8 @@ const ProductsList = () => {
     try {
       setLoadingVariants((prev) => new Set(prev).add(productId));
 
-      const response = await axios.get(
-        `${BASEURL}/api/admin/products/${productId}/variants`,
+      const response = await axiosClient.get(
+        `/api/admin/products/${productId}/variants`,
         { withCredentials: true },
       );
 
@@ -470,8 +469,8 @@ const ProductsList = () => {
         formData.append("media", file);
       });
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/products/${selectedProduct._id}/variants`,
+      const response = await axiosClient.post(
+        `/api/admin/products/${selectedProduct._id}/variants`,
         formData,
         {
           withCredentials: true,
@@ -525,8 +524,8 @@ const ProductsList = () => {
     if (!selectedProduct) return;
 
     try {
-      await axios.delete(
-        `${BASEURL}/api/admin/products/${selectedProduct._id}`,
+      await axiosClient.delete(
+        `/api/admin/products/${selectedProduct._id}`,
         { withCredentials: true },
       );
 
@@ -559,8 +558,8 @@ const ProductsList = () => {
         isActive: editFormData.isActive,
       };
 
-      const response = await axios.put(
-        `${BASEURL}/api/admin/products/${editingProduct._id}`,
+      const response = await axiosClient.put(
+        `/api/admin/products/${editingProduct._id}`,
         payload,
         { withCredentials: true },
       );

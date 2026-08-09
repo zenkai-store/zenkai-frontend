@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import axiosClient from "../../utils/axiosClient";
 import { Link, useNavigate } from "react-router-dom";
-import BASEURL from "../../config/baseURL";
 import {
   getCachedUserData,
   getUserData,
@@ -97,8 +96,8 @@ const Reviews = ({ productId }) => {
 
     try {
       setStatsLoading(true);
-      const response = await axios.get(
-        `${BASEURL}/api/reviews/product/${productId}/stats`,
+      const response = await axiosClient.get(
+        `/api/reviews/product/${productId}/stats`,
         { withCredentials: false },
       );
 
@@ -120,8 +119,8 @@ const Reviews = ({ productId }) => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(
-        `${BASEURL}/api/reviews/product/${productId}`,
+      const response = await axiosClient.get(
+        `/api/reviews/product/${productId}`,
         {
           params: { page: currentPage, limit: REVIEWS_PER_PAGE },
           withCredentials: false,
@@ -210,8 +209,8 @@ const Reviews = ({ productId }) => {
         formDataToSend.append("media", file);
       });
 
-      const response = await axios.post(
-        `${BASEURL}/api/reviews`,
+      const response = await axiosClient.post(
+        `/api/reviews`,
         formDataToSend,
         {
           withCredentials: true,
@@ -260,8 +259,8 @@ const Reviews = ({ productId }) => {
     try {
       setDeletingId(reviewId);
 
-      const response = await axios.delete(
-        `${BASEURL}/api/reviews/${reviewId}`,
+      const response = await axiosClient.delete(
+        `/api/reviews/${reviewId}`,
         {
           withCredentials: true,
         },

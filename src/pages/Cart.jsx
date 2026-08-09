@@ -24,7 +24,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useCart, moveFromWishlistToCart } from "../services/cartService";
-import { getStoredUserData } from "../utils/auth";
+import { getStoredUserData, getAuthHeader } from "../utils/auth";
 import BASEURL from "../config/baseURL";
 
 const Cart = () => {
@@ -205,6 +205,7 @@ const Cart = () => {
         setAddressError("");
         const response = await fetch(`${BASEURL}/api/address`, {
           credentials: "include",
+          headers: getAuthHeader(),
         });
         const data = await response.json();
         if (data.success) {
@@ -266,7 +267,7 @@ const Cart = () => {
         `${BASEURL}/api/payment/create-order`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...getAuthHeader() },
           credentials: "include",
           body: JSON.stringify({
             addressId: selectedAddressId,
@@ -317,7 +318,7 @@ const Cart = () => {
               `${BASEURL}/api/payment/verify`,
               {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", ...getAuthHeader() },
                 credentials: "include",
                 body: JSON.stringify({
                   razorpay_order_id: response.razorpay_order_id,

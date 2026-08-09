@@ -1,11 +1,6 @@
-import axios from "axios";
-import BASEURL from "../config/baseURL";
+import axiosClient from "../utils/axiosClient";
 
-// Create axios instance with default config
-const cartApi = axios.create({
-  baseURL: BASEURL,
-  withCredentials: true,
-});
+const cartApi = axiosClient;
 
 /**
  * Get user's cart

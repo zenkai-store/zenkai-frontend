@@ -5,8 +5,10 @@ import {
   setCachedUserData,
   getCachedUserData,
   setStoredUserData,
+  setAuthToken,
   clearCachedUserData,
   clearStoredUserData,
+  getAuthHeader,
 } from "../utils/auth";
 import { Mail, Lock, User, Eye, EyeOff, Chrome, ArrowLeft } from "lucide-react";
 
@@ -27,7 +29,8 @@ const Login = ({ setIsLoggedIn }) => {
     const checkAuth = async () => {
       try {
         const response = await fetch(`${BASEURL}/api/auth/me`, {
-          credentials: "include", // Important: This sends the cookie
+          credentials: "include",
+          headers: getAuthHeader(),
         });
 
         if (response.ok) {
@@ -54,6 +57,7 @@ const Login = ({ setIsLoggedIn }) => {
         try {
           const response = await fetch(`${BASEURL}/api/auth/me`, {
             credentials: "include",
+            headers: getAuthHeader(),
           });
 
           if (response.ok) {
@@ -119,9 +123,7 @@ const Login = ({ setIsLoggedIn }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        // Use user data from the login/signup response directly.
-        // Safari blocks the cross-origin cookie on the immediately following
-        // /api/auth/me request, so we avoid that round-trip entirely.
+        if (data.token) setAuthToken(data.token);
         const userData = data.user || { email: formData.email, name: formData.name || "User" };
         setCachedUserData(userData);
         setStoredUserData(userData);

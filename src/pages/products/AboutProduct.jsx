@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../utils/axiosClient";
 import { addVariantToCart } from "../../services/addToCart";
 import {
   getCachedUserData,
@@ -116,7 +115,7 @@ const AboutProduct = () => {
         // Fetch all products and find by slug, or use a direct endpoint
         // Using the product ID from the slug mapping or a search endpoint
         const response = await axios.get(
-          `${BASEURL}/api/products/search?q=${encodeURIComponent(slug)}&page=1&limit=1`,
+          `/api/products/search?q=${encodeURIComponent(slug)}&page=1&limit=1`,
           { withCredentials: false },
         );
 
@@ -125,7 +124,7 @@ const AboutProduct = () => {
 
           // Now fetch full product details using the product _id
           const detailResponse = await axios.get(
-            `${BASEURL}/api/products/${foundProduct._id}`,
+            `/api/products/${foundProduct._id}`,
             { withCredentials: false },
           );
 
@@ -226,14 +225,14 @@ const AboutProduct = () => {
       setWishlistLoading(true);
 
       if (isWishlisted) {
-        await axios.delete(`${BASEURL}/api/wishlist/${product._id}`, {
+        await axios.delete(`/api/wishlist/${product._id}`, {
           withCredentials: true,
         });
         setIsWishlisted(false);
         showNotification("Removed from wishlist");
       } else {
         await axios.post(
-          `${BASEURL}/api/wishlist/${product._id}`,
+          `/api/wishlist/${product._id}`,
           {},
           { withCredentials: true },
         );

@@ -1,24 +1,18 @@
 import axios from "axios";
 import BASEURL from "../config/baseURL";
-import { clearStoredUserData, clearCachedUserData } from "./auth";
+import { getAuthToken } from "./auth";
 
 const axiosClient = axios.create({
   baseURL: BASEURL,
   withCredentials: true,
 });
 
-axiosClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      clearStoredUserData();
-      clearCachedUserData();
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
-      }
-    }
-    return Promise.reject(error);
-  },
-);
+axiosClient.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export default axiosClient;

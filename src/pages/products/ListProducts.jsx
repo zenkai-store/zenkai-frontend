@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import axios from "axios";
+import axiosClient from "../../utils/axiosClient";
 import { addVariantToCart } from "../../services/addToCart";
-import BASEURL from "../../config/baseURL";
 
 import {
   getCachedUserData,
@@ -130,15 +129,15 @@ const ListProducts = () => {
       if (debouncedSearchQuery && debouncedSearchQuery.length >= 2) {
         // Search API
         setIsSearching(true);
-        response = await axios.get(
-          `${BASEURL}/api/products/search?q=${encodeURIComponent(debouncedSearchQuery)}&page=${currentPage}&limit=${PRODUCTS_PER_PAGE}`,
+        response = await axiosClient.get(
+          `/api/products/search?q=${encodeURIComponent(debouncedSearchQuery)}&page=${currentPage}&limit=${PRODUCTS_PER_PAGE}`,
           { withCredentials: true }, // Always send credentials
         );
       } else {
         // Get all products
         setIsSearching(false);
-        response = await axios.get(
-          `${BASEURL}/api/products?page=${currentPage}&limit=${PRODUCTS_PER_PAGE}`,
+        response = await axiosClient.get(
+          `/api/products?page=${currentPage}&limit=${PRODUCTS_PER_PAGE}`,
           { withCredentials: true }, // Always send credentials
         );
       }
@@ -272,7 +271,7 @@ const ListProducts = () => {
 
       if (isWishlisted) {
         // Remove from wishlist
-        await axios.delete(`${BASEURL}/api/wishlist/${productId}`, {
+        await axiosClient.delete(`/api/wishlist/${productId}`, {
           withCredentials: true,
         });
         const newWishlisted = new Set(wishlistedItems);
@@ -281,8 +280,8 @@ const ListProducts = () => {
         showNotification("Removed from wishlist");
       } else {
         // Add to wishlist
-        await axios.post(
-          `${BASEURL}/api/wishlist/${productId}`,
+        await axiosClient.post(
+          `/api/wishlist/${productId}`,
           {},
           { withCredentials: true },
         );

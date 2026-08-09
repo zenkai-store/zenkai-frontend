@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../utils/axiosClient";
 import {
   Search,
   X,
@@ -93,7 +92,7 @@ const OrderList = () => {
       if (dateTo) params.dateTo = dateTo;
       // Search is not implemented on backend yet – we'll filter client‑side
 
-      const response = await axios.get(`${BASEURL}/api/admin/orders`, {
+      const response = await axiosClient.get(`/api/admin/orders`, {
         params,
         withCredentials: true,
       });
@@ -124,8 +123,8 @@ const OrderList = () => {
       if (dateFrom) params.startDate = dateFrom;
       if (dateTo) params.endDate = dateTo;
 
-      const response = await axios.get(
-        `${BASEURL}/api/admin/orders/statistics/dashboard`,
+      const response = await axiosClient.get(
+        `/api/admin/orders/statistics/dashboard`,
         {
           params,
           withCredentials: true,

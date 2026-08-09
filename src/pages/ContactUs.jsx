@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCachedUserData, getStoredUserData } from "../utils/auth";
+import { getCachedUserData, getStoredUserData, getAuthHeader } from "../utils/auth";
 
 import Logo from "../assets/logo.png";
 import ContactHero from "../assets/contactus.png"; // Replace with your actual image
@@ -131,10 +131,11 @@ const ContactUs = () => {
   const handleLogout = async () => {
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_BASEURL || "http://localhost:5000"}/api/auth/logout`,
+        `/api/auth/logout`,
         {
           method: "POST",
           credentials: "include",
+          headers: getAuthHeader(),
         },
       );
 

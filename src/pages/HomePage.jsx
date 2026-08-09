@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import axiosClient from "../utils/axiosClient";
 
 import { useCart } from "../services/cartService";
@@ -13,6 +12,7 @@ import {
   setStoredUserData,
   clearCachedUserData,
   clearStoredUserData,
+  getAuthHeader,
 } from "../utils/auth";
 
 // Replace these with your actual assets
@@ -131,6 +131,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
         try {
           const response = await fetch(`${BASEURL}/api/auth/me`, {
             credentials: "include",
+            headers: getAuthHeader(),
           });
 
           if (response.ok) {
@@ -150,6 +151,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
         try {
           const response = await fetch(`${BASEURL}/api/auth/me`, {
             credentials: "include",
+            headers: getAuthHeader(),
           });
 
           if (response.ok) {
@@ -194,7 +196,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
 
       if (isWishlisted) {
         // Remove from wishlist
-        await axios.delete(`${BASEURL}/api/wishlist/${productId}`, {
+        await axiosClient.delete(`/api/wishlist/${productId}`, {
           withCredentials: true,
         });
         const newWishlisted = new Set(wishlistedItems);
@@ -202,8 +204,8 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
         setWishlistedItems(newWishlisted);
       } else {
         // Add to wishlist
-        await axios.post(
-          `${BASEURL}/api/wishlist/${productId}`,
+        await axiosClient.post(
+          `/api/wishlist/${productId}`,
           {},
           { withCredentials: true },
         );
@@ -233,7 +235,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
       setNewArrivalsLoading(true);
       setNewArrivalsError("");
 
-      const response = await axios.get(`${BASEURL}/api/featured`, {
+      const response = await axiosClient.get(`/api/featured`, {
         withCredentials: false,
       });
 
@@ -288,7 +290,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
       setCategoriesLoading(true);
       setCategoriesError("");
 
-      const response = await axios.get(`${BASEURL}/api/admin/categories/`, {
+      const response = await axiosClient.get(`/api/admin/categories/`, {
         withCredentials: false,
       });
 
@@ -319,8 +321,8 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
       setExploreLoading(true);
       setExploreError("");
 
-      const response = await axios.get(
-        `${BASEURL}/api/products?page=1&limit=4`,
+      const response = await axiosClient.get(
+        `/api/products?page=1&limit=4`,
         { withCredentials: loggedIn }, // Send credentials if logged in
       );
 
@@ -472,6 +474,7 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
       await fetch(`${BASEURL}/api/auth/logout`, {
         method: "POST",
         credentials: "include",
+            headers: getAuthHeader(),
       });
     } catch (error) {
       console.error("Logout error:", error);

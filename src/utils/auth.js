@@ -2,68 +2,39 @@ import BASEURL from "../config/baseURL";
 
 const AUTH_STORAGE_KEY = "zenkai_user_data";
 const AUTH_TIMESTAMP_KEY = "zenkai_user_data_ts";
+const AUTH_TOKEN_KEY = "zenkai_token";
 
-// Check if user is authenticated by verifying with backend
-export const isAuthenticated = async () => {
+export const setAuthToken = (token) => {
   try {
-    const response = await fetch(`${BASEURL}/api/auth/me`, {
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setStoredUserData(data.user);
-      return { authenticated: true, user: data.user };
-    }
-
-    // Token expired/invalid → clear cache
-    clearCachedUserData();
-    return { authenticated: false, user: null };
-  } catch (error) {
-    console.error("Auth check error:", error);
-    clearCachedUserData();
-    return { authenticated: false, user: null };
-  }
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch {}
 };
 
-// Get user data from backend, with localStorage fallback
-export const getUserData = async () => {
+export const getAuthToken = () => {
   try {
-    const response = await fetch(`${BASEURL}/api/auth/me`, {
-      credentials: "include",
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setStoredUserData(data.user);
-      return data.user;
-    }
-
-    clearCachedUserData();
-    return null;
-  } catch (error) {
-    console.error("Get user data error:", error);
-    clearCachedUserData();
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
     return null;
   }
 };
 
-// Store user data in localStorage for persistence
+export const getAuthHeader = () => {
+  const token = getAuthToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const setStoredUserData = (userData) => {
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(userData));
     localStorage.setItem(AUTH_TIMESTAMP_KEY, Date.now().toString());
-  } catch (error) {
-    console.error("Error storing user data:", error);
-  }
+  } catch {}
 };
 
 export const getStoredUserData = () => {
   try {
     const data = localStorage.getItem(AUTH_STORAGE_KEY);
     return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error("Error retrieving stored user data:", error);
+  } catch {
     return null;
   }
 };
@@ -72,14 +43,10 @@ export const clearStoredUserData = () => {
   try {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(AUTH_TIMESTAMP_KEY);
-  } catch (error) {
-    console.error("Error clearing stored user data:", error);
-  }
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {}
 };
 
-// Returns true if user data was stored within the last `ms` milliseconds.
-// Used to avoid wiping a freshly-set session before the browser has had a
-// chance to send the auth cookie on the first cross-origin request.
 export const isStoredDataFresh = (ms = 10000) => {
   try {
     const ts = localStorage.getItem(AUTH_TIMESTAMP_KEY);
@@ -89,17 +56,15 @@ export const isStoredDataFresh = (ms = 10000) => {
   }
 };
 
-// Store user data in memory (for session only)
 let cachedUserData = null;
 
 export const setCachedUserData = (userData) => {
   cachedUserData = userData;
-  setStoredUserData(userData); // Also persist to localStorage
+  setStoredUserData(userData);
 };
 
 export const getCachedUserData = () => {
   if (cachedUserData) return cachedUserData;
-  // Fallback to localStorage
   return getStoredUserData();
 };
 
@@ -108,16 +73,49 @@ export const clearCachedUserData = () => {
   clearStoredUserData();
 };
 
-// Logout function
+export const isAuthenticated = async () => {
+  try {
+    const response = await fetch(`${BASEURL}/api/auth/me`, {
+      credentials: "include",
+      headers: getAuthHeader(),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setStoredUserData(data.user);
+      return { authenticated: true, user: data.user };
+    }
+    return { authenticated: false, user: null };
+  } catch {
+    return { authenticated: false, user: null };
+  }
+};
+
+export const getUserData = async () => {
+  try {
+    const response = await fetch(`${BASEURL}/api/auth/me`, {
+      credentials: "include",
+      headers: getAuthHeader(),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setStoredUserData(data.user);
+      return data.user;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 export const logout = async () => {
   try {
     await fetch(`${BASEURL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
+      headers: getAuthHeader(),
     });
-  } catch (error) {
-    console.error("Logout error:", error);
-  } finally {
+  } catch {}
+  finally {
     clearCachedUserData();
   }
 };
