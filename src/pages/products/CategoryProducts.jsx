@@ -6,7 +6,6 @@ import { addVariantToCart } from "../../services/addToCart";
 import { useCart } from "../../services/cartService";
 import {
   getCachedUserData,
-  getUserData,
   getStoredUserData,
 } from "../../utils/auth";
 
@@ -85,35 +84,14 @@ const CategoryProducts = () => {
 
   // ======================= CHECK USER AUTH (NOT ADMIN) =======================
   useEffect(() => {
-    const checkUserAuth = async () => {
-      try {
-        const response = await fetch(`${BASEURL}/api/auth/me`, {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          setIsUserLoggedIn(false);
-          setUserName("");
-          return;
-        }
-
-        const data = await response.json();
-
-        if (data.user?.role === "admin") {
-          setIsUserLoggedIn(false);
-          setUserName("");
-          return;
-        }
-
-        setIsUserLoggedIn(true);
-        setUserName(data.user?.name || "User");
-      } catch (error) {
-        setIsUserLoggedIn(false);
-        setUserName("");
-      }
-    };
-
-    checkUserAuth();
+    const storedData = getStoredUserData();
+    if (storedData && storedData?.role !== "admin") {
+      setIsUserLoggedIn(true);
+      setUserName(storedData?.name || "User");
+    } else {
+      setIsUserLoggedIn(false);
+      setUserName("");
+    }
   }, []);
 
   // ======================= FETCH PRODUCTS =======================

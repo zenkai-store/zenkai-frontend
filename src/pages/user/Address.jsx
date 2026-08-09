@@ -2,12 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
-import {
-  getStoredUserData,
-  getUserData,
-  clearStoredUserData,
-  clearCachedUserData,
-} from "../../utils/auth";
+import { getStoredUserData } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
 
@@ -59,8 +54,13 @@ const Address = () => {
   const [notification, setNotification] = useState(null);
 
   // Auth
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
+  const storedData = getStoredUserData();
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(
+    () => !!storedData && storedData?.role !== "admin"
+  );
+  const [userName, setUserName] = useState(
+    () => (storedData?.role !== "admin" ? storedData?.name || "User" : "")
+  );
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,30 +112,6 @@ const Address = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [geocoding, setGeocoding] = useState(false);
 
-  // ======================= CHECK USER AUTH =======================
-  useEffect(() => {
-    const checkUserAuth = () => {
-      const storedData = getStoredUserData();
-      const userData = getUserData();
-
-      if (
-        (storedData || userData) &&
-        storedData?.role !== "admin" &&
-        userData?.role !== "admin" &&
-        userData?.user?.role !== "admin"
-      ) {
-        setIsUserLoggedIn(true);
-        setUserName(
-          storedData?.name || userData?.name || userData?.user?.name || "User",
-        );
-      } else {
-        setIsUserLoggedIn(false);
-        setUserName("");
-      }
-    };
-    checkUserAuth();
-  }, []);
-
   // ======================= FETCH ADDRESSES =======================
   const fetchAddresses = async () => {
     try {
@@ -161,15 +137,7 @@ const Address = () => {
       }
     } catch (err) {
       console.error("Failed to fetch addresses:", err);
-      if (err.response?.status === 401) {
-        clearStoredUserData();
-        clearCachedUserData();
-        setIsUserLoggedIn(false);
-        setUserName("");
-        setError("Your session has expired. Please login again.");
-      } else {
-        setError(err.response?.data?.message || "Failed to load addresses");
-      }
+      setError(err.response?.data?.message || "Failed to load addresses");
     } finally {
       setLoading(false);
     }

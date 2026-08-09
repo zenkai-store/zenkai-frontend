@@ -2,12 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
-import {
-  getStoredUserData,
-  getUserData,
-  clearStoredUserData,
-  clearCachedUserData,
-} from "../../utils/auth";
+import { getStoredUserData } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
 
@@ -34,38 +29,18 @@ const Profile = () => {
   const [error, setError] = useState("");
   const [notification, setNotification] = useState(null);
 
-  // Auth
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
+  const storedData = getStoredUserData();
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(
+    () => !!storedData && storedData?.role !== "admin"
+  );
+  const [userName, setUserName] = useState(
+    () => (storedData?.role !== "admin" ? storedData?.name || "User" : "")
+  );
 
   // Edit modal
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  // ======================= CHECK USER AUTH =======================
-  useEffect(() => {
-    const checkUserAuth = () => {
-      const storedData = getStoredUserData();
-      const userData = getUserData();
-
-      if (
-        (storedData || userData) &&
-        storedData?.role !== "admin" &&
-        userData?.role !== "admin" &&
-        userData?.user?.role !== "admin"
-      ) {
-        setIsUserLoggedIn(true);
-        setUserName(
-          storedData?.name || userData?.name || userData?.user?.name || "User",
-        );
-      } else {
-        setIsUserLoggedIn(false);
-        setUserName("");
-      }
-    };
-    checkUserAuth();
-  }, []);
 
   // ======================= FETCH PROFILE =======================
   const fetchProfile = async () => {
@@ -85,15 +60,7 @@ const Profile = () => {
       }
     } catch (err) {
       console.error("Failed to fetch profile:", err);
-      if (err.response?.status === 401) {
-        clearStoredUserData();
-        clearCachedUserData();
-        setIsUserLoggedIn(false);
-        setUserName("");
-        setError("Your session has expired. Please login again.");
-      } else {
-        setError(err.response?.data?.message || "Failed to load profile");
-      }
+      setError(err.response?.data?.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }

@@ -6,10 +6,7 @@ import BASEURL from "../../config/baseURL";
 
 import {
   getCachedUserData,
-  setCachedUserData,
-  getUserData,
   getStoredUserData,
-  setStoredUserData,
 } from "../../utils/auth";
 
 import { useCart } from "../../services/cartService";
@@ -109,37 +106,10 @@ const ListProducts = () => {
 
   // Check auth status and update wishlist from products
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch(`${BASEURL}/api/auth/me`, {
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setCachedUserData(data.user);
-          setStoredUserData(data.user);
-          setLoggedIn(true);
-          return true;
-        } else {
-          setLoggedIn(false);
-          return false;
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        setLoggedIn(false);
-        return false;
-      }
-    };
-
-    // Check stored data first for instant login state
     const storedData = getStoredUserData();
     if (storedData) {
       setLoggedIn(true);
     }
-
-    // Always verify with backend
-    checkAuth();
   }, []);
 
   // Fetch cart on mount if logged in

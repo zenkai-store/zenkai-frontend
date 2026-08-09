@@ -2,11 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
-import {
-  getStoredUserData,
-  setCachedUserData,
-  setStoredUserData,
-} from "../../utils/auth";
+import { getStoredUserData } from "../../utils/auth";
 
 import {
   CheckCircle,
@@ -40,37 +36,7 @@ const OrderConfirmation = () => {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState(null);
   const [error, setError] = useState("");
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  // ======================= AUTH CHECK =======================
-  useEffect(() => {
-    const checkAuth = async () => {
-      const storedData = getStoredUserData();
-      if (storedData) {
-        setLoggedIn(true);
-        return;
-      }
-      try {
-        const response = await fetch(`${BASEURL}/api/auth/me`, {
-          credentials: "include",
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCachedUserData(data.user);
-          setStoredUserData(data.user);
-          setLoggedIn(true);
-        } else {
-          setLoggedIn(false);
-          navigate("/login");
-        }
-      } catch (error) {
-        console.error("Auth check error:", error);
-        setLoggedIn(false);
-        navigate("/login");
-      }
-    };
-    checkAuth();
-  }, [navigate]);
+  const [loggedIn, setLoggedIn] = useState(() => !!getStoredUserData());
 
   // ======================= FETCH ORDER =======================
   useEffect(() => {
@@ -89,10 +55,6 @@ const OrderConfirmation = () => {
         }
       } catch (err) {
         console.error("Order fetch error:", err);
-        if (err.response?.status === 401) {
-          navigate("/login");
-          return;
-        }
         setError(err.response?.data?.message || "Failed to load order");
       } finally {
         setLoading(false);

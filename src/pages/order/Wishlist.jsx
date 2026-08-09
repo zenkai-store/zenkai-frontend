@@ -3,13 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import BASEURL from "../../config/baseURL";
 import { addProductFromWishlistToCart } from "../../services/addToCart";
-import {
-  getCachedUserData,
-  getUserData,
-  getStoredUserData,
-  clearCachedUserData,
-  clearStoredUserData,
-} from "../../utils/auth";
+import { getCachedUserData, getStoredUserData } from "../../utils/auth";
 
 import Logo from "../../assets/logo.png";
 
@@ -46,8 +40,13 @@ const Wishlist = () => {
   const [error, setError] = useState("");
 
   // Auth
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("");
+  const storedData = getStoredUserData();
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(
+    () => !!storedData && storedData?.role !== "admin"
+  );
+  const [userName, setUserName] = useState(
+    () => (storedData?.role !== "admin" ? storedData?.name || "User" : "")
+  );
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Deleting state
@@ -60,30 +59,6 @@ const Wishlist = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-
-  // ======================= CHECK USER AUTH =======================
-  useEffect(() => {
-    const checkUserAuth = () => {
-      const storedData = getStoredUserData();
-      const userData = getUserData();
-
-      if (
-        (storedData || userData) &&
-        storedData?.role !== "admin" &&
-        userData?.role !== "admin" &&
-        userData?.user?.role !== "admin"
-      ) {
-        setIsUserLoggedIn(true);
-        setUserName(
-          storedData?.name || userData?.name || userData?.user?.name || "User",
-        );
-      } else {
-        setIsUserLoggedIn(false);
-        setUserName("");
-      }
-    };
-    checkUserAuth();
-  }, []);
 
   // ======================= FETCH WISHLIST =======================
   const fetchWishlist = async () => {
@@ -107,18 +82,7 @@ const Wishlist = () => {
       }
     } catch (err) {
       console.error("Failed to fetch wishlist:", err);
-      if (err.response?.status === 401) {
-        // Token expired or invalid – clear session and force re-login
-        clearStoredUserData();
-        clearCachedUserData();
-        setIsUserLoggedIn(false);
-        setUserName("");
-        setError("Your session has expired. Please login again.");
-        // Optionally navigate to login page:
-        // navigate("/login");
-      } else {
-        setError(err.response?.data?.message || "Failed to load wishlist");
-      }
+      setError(err.response?.data?.message || "Failed to load wishlist");
     } finally {
       setLoading(false);
     }

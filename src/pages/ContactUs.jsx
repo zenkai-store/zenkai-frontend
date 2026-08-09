@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getCachedUserData,
-  getUserData,
-  getStoredUserData,
-} from "../utils/auth";
+import { getCachedUserData, getStoredUserData } from "../utils/auth";
 
 import Logo from "../assets/logo.png";
 import ContactHero from "../assets/contactus.png"; // Replace with your actual image
@@ -71,33 +67,19 @@ const ContactUs = () => {
 
   // ======================= CHECK AUTH =======================
   useEffect(() => {
-    const checkAuth = () => {
-      const storedData = getStoredUserData();
-      const userData = getUserData();
-      if (storedData || userData) {
-        setIsLoggedIn(true);
-        setUserName(
-          storedData?.name || userData?.name || userData?.user?.name || "User",
-        );
-        // Pre-fill form if user is logged in
-        if (storedData?.email || userData?.email || userData?.user?.email) {
-          setFormData((prev) => ({
-            ...prev,
-            email:
-              storedData?.email ||
-              userData?.email ||
-              userData?.user?.email ||
-              "",
-            name:
-              storedData?.name || userData?.name || userData?.user?.name || "",
-          }));
-        }
-      } else {
-        setIsLoggedIn(false);
-        setUserName("");
-      }
-    };
-    checkAuth();
+    const storedData = getStoredUserData();
+    if (storedData) {
+      setIsLoggedIn(true);
+      setUserName(storedData?.name || "User");
+      setFormData((prev) => ({
+        ...prev,
+        email: storedData?.email || "",
+        name: storedData?.name || "",
+      }));
+    } else {
+      setIsLoggedIn(false);
+      setUserName("");
+    }
   }, []);
 
   // ======================= FORM HANDLERS =======================

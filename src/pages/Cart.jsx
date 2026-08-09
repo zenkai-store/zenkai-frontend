@@ -24,11 +24,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useCart, moveFromWishlistToCart } from "../services/cartService";
-import {
-  getStoredUserData,
-  setCachedUserData,
-  setStoredUserData,
-} from "../utils/auth";
+import { getStoredUserData } from "../utils/auth";
 import BASEURL from "../config/baseURL";
 
 const Cart = () => {
@@ -49,7 +45,7 @@ const Cart = () => {
   } = useCart();
 
   // ======================= LOCAL STATE =======================
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(() => !!getStoredUserData());
   const [notification, setNotification] = useState(null);
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [showClearConfirm, setShowClearConfirm] = useState(false);
@@ -76,40 +72,6 @@ const Cart = () => {
       document.body.appendChild(script);
     });
   };
-
-  // ======================= AUTH CHECK =======================
-  useEffect(() => {
-    const checkAuth = async () => {
-      const storedData = getStoredUserData();
-
-      if (storedData) {
-        setLoggedIn(true);
-      } else {
-        try {
-          const response = await fetch(`${BASEURL}/api/auth/me`, {
-            credentials: "include",
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setCachedUserData(data.user);
-            setStoredUserData(data.user);
-            setLoggedIn(true);
-            setLoggedInUser(data.user);
-          } else {
-            setLoggedIn(false);
-            navigate("/login");
-          }
-        } catch (error) {
-          console.error("Auth check error:", error);
-          setLoggedIn(false);
-          navigate("/login");
-        }
-      }
-    };
-
-    checkAuth();
-  }, [navigate]);
 
   // ======================= FETCH CART =======================
   useEffect(() => {
