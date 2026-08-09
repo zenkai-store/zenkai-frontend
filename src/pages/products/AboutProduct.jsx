@@ -7,6 +7,7 @@ import {
   getUserData,
   getStoredUserData,
 } from "../../utils/auth";
+import axios from "axios";
 
 import Reviews from "./Reviews";
 import RecommendProducts from "./RecommendProducts";
