@@ -13,7 +13,6 @@ import {
   setStoredUserData,
   clearCachedUserData,
   clearStoredUserData,
-  isStoredDataFresh,
 } from "../utils/auth";
 
 // Replace these with your actual assets
@@ -139,18 +138,10 @@ const HomePage = ({ isLoggedIn: propIsLoggedIn, setIsLoggedIn }) => {
             setCachedUserData(data.user);
             setStoredUserData(data.user);
             setUserName(data.user.name || "User");
-          } else if (response.status === 401 && !isStoredDataFresh(10000)) {
-            // Only clear on 401 if the stored data is not fresh (i.e., not just
-            // set after login). Safari blocks cross-origin cookies on the first
-            // request after login, causing a false 401 before the cookie is
-            // established — we must not wipe a legitimately fresh session.
-            clearStoredUserData();
-            clearCachedUserData();
-            setLoggedIn(false);
-            setIsLoggedIn(false);
-            setUserName("");
           }
-          // For other non-ok statuses (5xx, etc.), keep the user logged in
+          // Never wipe localStorage on a failed /api/auth/me — Safari blocks
+          // cross-origin cookies causing false 401s. Only explicit logout clears
+          // the session. A genuinely expired token will 401 on data fetches.
         } catch (error) {
           // Network error — keep user logged in from localStorage; don't clear
           console.error("Backend verification error:", error);
