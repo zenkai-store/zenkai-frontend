@@ -26,6 +26,8 @@ import {
   Layers,
   ArrowRight,
   Eye,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 
 const UserOrderDetails = () => {
@@ -557,31 +559,150 @@ const UserOrderDetails = () => {
           )}
         </div>
 
-        {/* ======================= TRACKING (if available) ======================= */}
-        {order.trackingNumber && order.trackingUrl && (
-          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Truck size={18} className="text-blue-600" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Track your order
-                </p>
-                <p className="text-xs text-gray-500">
-                  AWB: {order.trackingNumber}
-                </p>
+        {/* ======================= SHIPMENT STATUS SECTION ======================= */}
+        {(() => {
+          const hasTracking = order.awbCode || order.trackingNumber;
+          const isConfirmed = order.orderStatus === "confirmed";
+          const isShipped = order.orderStatus === "shipped";
+          const isDelivered = order.orderStatus === "delivered";
+          const deliveryFailed = order.deliveryStatus === "failed";
+
+          if (deliveryFailed && !hasTracking) {
+            return (
+              <div className="bg-red-50 rounded-2xl p-5 border border-red-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-red-800">Shipment Issue</p>
+                    <p className="text-sm text-red-600 mt-0.5">
+                      There was an issue arranging your shipment. Our team has
+                      been notified and will resolve this shortly. Please check
+                      back later or contact support.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-            <a
-              href={order.trackingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition"
-            >
-              Track Now
-              <ArrowRight size={14} />
-            </a>
-          </div>
-        )}
+            );
+          }
+
+          if ((isConfirmed || order.orderStatus === "processing") && !hasTracking) {
+            return (
+              <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Info className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-amber-800">
+                      Order Confirmed — Shipment Being Arranged
+                    </p>
+                    <p className="text-sm text-amber-700 mt-0.5">
+                      Your order is confirmed and our team is arranging the
+                      shipment. You'll see tracking details here once the
+                      package is dispatched. This usually takes 1–2 business
+                      days.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          if (hasTracking) {
+            const awb = order.awbCode || order.trackingNumber;
+            const trackUrl = order.trackingUrl;
+            const courier = order.courierName;
+            const estDelivery = order.estimatedDeliveryDate;
+            const shippedAt = order.shippedAt;
+
+            return (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 bg-indigo-50 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <Truck className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-indigo-900">
+                      {isDelivered ? "Order Delivered" : "Package Dispatched"}
+                    </p>
+                    <p className="text-xs text-indigo-600">
+                      {isDelivered
+                        ? "Your order has been delivered successfully."
+                        : "Your package is on its way."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+                      AWB / Tracking Number
+                    </p>
+                    <p className="font-mono text-gray-900 font-semibold text-sm">
+                      {awb}
+                    </p>
+                  </div>
+
+                  {courier && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+                        Courier Partner
+                      </p>
+                      <p className="text-gray-900 font-medium text-sm">
+                        {courier}
+                      </p>
+                    </div>
+                  )}
+
+                  {shippedAt && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+                        Dispatched On
+                      </p>
+                      <p className="text-gray-900 text-sm">
+                        {formatDate(shippedAt)}
+                      </p>
+                    </div>
+                  )}
+
+                  {estDelivery && (
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">
+                        Expected Delivery
+                      </p>
+                      <p className="text-gray-900 text-sm font-medium">
+                        {new Date(estDelivery).toLocaleDateString("en-IN", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {trackUrl && (
+                  <div className="px-6 pb-5">
+                    <a
+                      href={trackUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full text-sm font-semibold transition shadow-lg shadow-indigo-500/25 active:scale-95"
+                    >
+                      <Truck size={16} />
+                      Track on Shiprocket
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return null;
+        })()}
 
         {/* ======================= STATUS HISTORY (optional) ======================= */}
         {statusHistory.length > 1 && (

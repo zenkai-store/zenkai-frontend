@@ -21,6 +21,7 @@ import {
   XCircle,
   User,
   Loader,
+  Info,
 } from "lucide-react";
 
 const UserOrders = () => {
@@ -158,6 +159,39 @@ const UserOrders = () => {
       refunded: { label: "Refunded", textColor: "text-orange-600" },
     };
     return map[status] || { label: status, textColor: "text-gray-600" };
+  };
+
+  const getShipmentChip = (order) => {
+    const hasTracking = order.awbCode || order.trackingNumber;
+
+    if (order.orderStatus === "shipped" && hasTracking) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+          <Truck size={11} />
+          Shipped · {order.awbCode || order.trackingNumber}
+        </span>
+      );
+    }
+    if (
+      (order.orderStatus === "confirmed" || order.orderStatus === "processing") &&
+      !hasTracking
+    ) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">
+          <Info size={11} />
+          Shipment Pending
+        </span>
+      );
+    }
+    if (order.orderStatus === "delivered") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+          <CheckCircle size={11} />
+          Delivered
+        </span>
+      );
+    }
+    return null;
   };
 
   // ======================= SKELETON =======================
@@ -338,6 +372,7 @@ const UserOrders = () => {
                             <DollarSign size={14} />
                             {formatPrice(order.totalAmount)}
                           </span>
+                          {getShipmentChip(order)}
                         </div>
                       </div>
 

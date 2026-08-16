@@ -25,6 +25,8 @@ import Profile from "./pages/user/Profile";
 import OrderConfirmation from "./pages/order/OrderConfirmation";
 import UserOrderDetails from "./pages/order/UserOrderDetails";
 import UserOrders from "./pages/order/UserOrders";
+import AdminDeliveryRequests from "./pages/admin/shipments/AdminDeliveryRequests";
+import AdminShipments from "./pages/admin/shipments/AdminShipments";
 
 import { CartProvider } from "./context/CartContext";
 import { getStoredUserData } from "./utils/auth";
@@ -118,6 +120,8 @@ function App() {
           <Route path="orders/list" element={<OrderList />} />
           <Route path="customers/list" element={<CustomerList />} />
           <Route path="customers/:userId/orders" element={<CustomerOrders />} />
+          <Route path="shipments/list" element={<AdminShipments />} />
+          <Route path="delivery-requests/list" element={<AdminDeliveryRequests />} />
         </Route>
 
         <Route

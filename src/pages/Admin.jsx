@@ -36,6 +36,8 @@ import {
   Search,
   Highlighter,
   CirclePlus,
+  Truck,
+  AlertTriangle,
 } from "lucide-react";
 
 const Admin = () => {
@@ -56,6 +58,7 @@ const Admin = () => {
     discount: false,
     features: false,
     support: false,
+    shipments: false,
   });
 
   // Check authentication on mount
@@ -132,6 +135,12 @@ const Admin = () => {
     }
     if (currentPath.includes("/support")) {
       setExpandedMenus((prev) => ({ ...prev, support: true }));
+    }
+    if (
+      currentPath.includes("/admin/shipments") ||
+      currentPath.includes("/admin/delivery-requests")
+    ) {
+      setExpandedMenus((prev) => ({ ...prev, shipments: true }));
     }
   }, [location.pathname]);
 
@@ -366,6 +375,24 @@ const Admin = () => {
           to: "/admin/support/faq",
           label: "FAQ",
           icon: <FileText size={16} />,
+        },
+      ],
+    },
+    {
+      id: "shipments",
+      label: "Shipments",
+      icon: <Truck size={20} />,
+      expanded: expandedMenus.shipments,
+      items: [
+        {
+          to: "/admin/shipments/list",
+          label: "All Shipments",
+          icon: <List size={16} />,
+        },
+        {
+          to: "/admin/delivery-requests/list",
+          label: "Delivery Requests",
+          icon: <AlertTriangle size={16} />,
         },
       ],
     },
