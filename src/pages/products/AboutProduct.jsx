@@ -63,6 +63,7 @@ const AboutProduct = () => {
   // Variant selection
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
 
   const [cartAdding, setCartAdding] = useState(false);
 
@@ -136,10 +137,12 @@ const AboutProduct = () => {
             // Set default variant
             if (productData.variants?.length > 0) {
               const defaultVariant =
-                productData.variants.find((v) => v.isDefault) ||
+                productData.variants.find((v) => v.isDefault && v.isActive) ||
+                productData.variants.find((v) => v.isActive) ||
                 productData.variants[0];
               setSelectedVariant(defaultVariant);
               setSelectedColor(defaultVariant.color?.code || null);
+              setSelectedSize(defaultVariant.size || null);
               setIsWishlisted(defaultVariant.isWishlisted || false);
 
               // Set active image to first media
@@ -167,16 +170,56 @@ const AboutProduct = () => {
   }, [slug]);
 
   // ======================= VARIANT HANDLERS =======================
+
+  // Find the best matching variant given a color code and size.
+  // Priority: exact match (both color + size) → same color any size → same size any color → first active.
+  const findBestVariant = (variants, colorCode, size) => {
+    if (!variants?.length) return null;
+    const active = variants.filter((v) => v.isActive);
+    if (!active.length) return variants[0];
+
+    // 1. Exact match on both
+    const exact = active.find(
+      (v) => v.color?.code === colorCode && v.size === size,
+    );
+    if (exact) return exact;
+
+    // 2. Match color, pick first active for any size
+    const byColor = active.find((v) => v.color?.code === colorCode);
+    if (byColor) return byColor;
+
+    // 3. Match size, pick first active for any color
+    const bySize = active.find((v) => v.size === size);
+    if (bySize) return bySize;
+
+    // 4. Fallback to first active
+    return active[0];
+  };
+
   const handleColorSelect = (colorCode) => {
     if (!product?.variants) return;
 
-    const variant = product.variants.find(
-      (v) => v.color?.code === colorCode && v.isActive,
-    );
-
+    // Try to keep the current size when switching color
+    const variant = findBestVariant(product.variants, colorCode, selectedSize);
     if (variant) {
       setSelectedVariant(variant);
-      setSelectedColor(colorCode);
+      setSelectedColor(variant.color?.code || colorCode);
+      setSelectedSize(variant.size || selectedSize);
+      setIsWishlisted(variant.isWishlisted || false);
+      setActiveImageIndex(0);
+      setQuantity(1);
+    }
+  };
+
+  const handleSizeSelect = (size) => {
+    if (!product?.variants) return;
+
+    // Try to keep the current color when switching size
+    const variant = findBestVariant(product.variants, selectedColor, size);
+    if (variant) {
+      setSelectedVariant(variant);
+      setSelectedColor(variant.color?.code || selectedColor);
+      setSelectedSize(variant.size || size);
       setIsWishlisted(variant.isWishlisted || false);
       setActiveImageIndex(0);
       setQuantity(1);
@@ -423,6 +466,26 @@ const AboutProduct = () => {
         selectedVariant.pricing.sellingPrice,
       )
     : 0;
+
+  // Compute which sizes are available (have at least one active variant) for the currently selected color.
+  // If no color is selected, show all active sizes.
+  const activeVariants = product?.variants?.filter((v) => v.isActive) || [];
+  const sizesForSelectedColor = selectedColor
+    ? activeVariants
+        .filter((v) => v.color?.code === selectedColor)
+        .map((v) => v.size)
+        .filter(Boolean)
+    : activeVariants.map((v) => v.size).filter(Boolean);
+  const availableSizesSet = new Set(sizesForSelectedColor);
+
+  // Compute which colors are available for the currently selected size.
+  const colorsForSelectedSize = selectedSize
+    ? activeVariants
+        .filter((v) => v.size === selectedSize)
+        .map((v) => v.color?.code)
+        .filter(Boolean)
+    : activeVariants.map((v) => v.color?.code).filter(Boolean);
+  const availableColorsSet = new Set(colorsForSelectedSize);
 
   return (
     <div className="w-full min-h-screen bg-white font-lufga">
@@ -687,10 +750,17 @@ const AboutProduct = () => {
                   {product.variantSummary.availableColors
                     .filter((color) => color.isActive)
                     .map((color) => {
-                      const variant = product.variants.find(
-                        (v) => v.color?.code === color.code && v.isActive,
+                      // A color is unavailable for the current size if no active variant
+                      // matches both this color AND the selected size.
+                      const isUnavailableForSize =
+                        selectedSize && !availableColorsSet.has(color.code);
+                      // Check if all variants for this color are out of stock
+                      const colorVariants = activeVariants.filter(
+                        (v) => v.color?.code === color.code,
                       );
-                      const isOutOfStockVariant = variant?.quantity === 0;
+                      const isOutOfStockVariant =
+                        colorVariants.length > 0 &&
+                        colorVariants.every((v) => v.quantity === 0);
 
                       return (
                         <button
@@ -701,14 +771,20 @@ const AboutProduct = () => {
                             isOutOfStockVariant ? "cursor-not-allowed" : ""
                           }`}
                           title={`${color.name}${
-                            isOutOfStockVariant ? " (Out of Stock)" : ""
+                            isOutOfStockVariant
+                              ? " (Out of Stock)"
+                              : isUnavailableForSize
+                                ? " (Not available in selected size)"
+                                : ""
                           }`}
                         >
                           <div
                             className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 transition shadow-sm ${
                               selectedColor === color.code
                                 ? "border-red-500 scale-110"
-                                : "border-gray-300 hover:border-gray-500"
+                                : isUnavailableForSize
+                                  ? "border-gray-200 opacity-40"
+                                  : "border-gray-300 hover:border-gray-500"
                             } ${isOutOfStockVariant ? "opacity-50" : ""}`}
                             style={{ backgroundColor: color.code }}
                           ></div>
@@ -732,7 +808,7 @@ const AboutProduct = () => {
               </div>
             )}
 
-            {/* Size / Scale Display */}
+            {/* Size / Scale Selection */}
             {product.variantSummary?.availableSizes?.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -743,18 +819,51 @@ const AboutProduct = () => {
                   </span>
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {product.variantSummary.availableSizes.map((size) => (
-                    <span
-                      key={size}
-                      className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold border transition ${
-                        selectedVariant?.size === size
-                          ? "bg-red-500 text-white border-red-500 shadow-md shadow-red-500/20"
-                          : "bg-gray-50 text-gray-700 border-gray-200"
-                      }`}
-                    >
-                      {size}
-                    </span>
-                  ))}
+                  {product.variantSummary.availableSizes.map((size) => {
+                    const isSelected = selectedVariant?.size === size;
+                    // A size is unavailable for the current color if no active variant
+                    // matches both the selected color AND this size.
+                    const isUnavailableForColor =
+                      selectedColor && !availableSizesSet.has(size);
+                    // Check if all variants for this size are out of stock
+                    const sizeVariants = activeVariants.filter(
+                      (v) => v.size === size,
+                    );
+                    const isOutOfStockSize =
+                      sizeVariants.length > 0 &&
+                      sizeVariants.every((v) => v.quantity === 0);
+
+                    return (
+                      <button
+                        key={size}
+                        onClick={() => handleSizeSelect(size)}
+                        disabled={isOutOfStockSize}
+                        title={
+                          isOutOfStockSize
+                            ? `${size} — Out of Stock`
+                            : isUnavailableForColor
+                              ? `${size} — Not available in selected color`
+                              : size
+                        }
+                        className={`relative inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold border transition-all duration-150 active:scale-95 ${
+                          isOutOfStockSize
+                            ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-60"
+                            : isSelected
+                              ? "bg-red-500 text-white border-red-500 shadow-md shadow-red-500/20"
+                              : isUnavailableForColor
+                                ? "bg-gray-50 text-gray-400 border-gray-200 opacity-50 cursor-pointer hover:opacity-75"
+                                : "bg-gray-50 text-gray-700 border-gray-200 hover:border-red-400 hover:text-red-500 hover:bg-red-50 cursor-pointer"
+                        }`}
+                      >
+                        {size}
+                        {isOutOfStockSize && (
+                          <span className="ml-1.5 text-[10px] font-normal opacity-70">
+                            sold out
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

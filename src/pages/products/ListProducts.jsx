@@ -642,6 +642,20 @@ const ListProducts = () => {
             </div>
           )}
 
+          {/* Size Badges */}
+          {product.variantSummary?.availableSizes?.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1 mb-2">
+              {product.variantSummary.availableSizes.slice(0, 4).map((size) => (
+                <span
+                  key={size}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200"
+                >
+                  {size}
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Price */}
           <div className="flex items-baseline gap-2 flex-wrap">
             {price && (
