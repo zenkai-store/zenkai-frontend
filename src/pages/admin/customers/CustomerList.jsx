@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axiosClient from "../../../api/axiosClient";
 import {
   Search,
@@ -17,7 +18,9 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Eye,
 } from "lucide-react";
+import CustomerDetail from "./CustomerDetail";
 
 const LIMIT = 20;
 
@@ -78,6 +81,8 @@ const SortIcon = ({ field, sortBy, sortOrder }) => {
 };
 
 const CustomerList = () => {
+  const navigate = useNavigate();
+
   const [customers, setCustomers] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -94,6 +99,9 @@ const CustomerList = () => {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
 
+  // Detail drawer state
+  const [detailCustomerId, setDetailCustomerId] = useState(null);
+
   const searchDebounceRef = useRef(null);
   const abortRef = useRef(null);
 
@@ -108,7 +116,6 @@ const CustomerList = () => {
   }, [search]);
 
   const fetchCustomers = useCallback(async () => {
-    // Cancel any in-flight request
     if (abortRef.current) abortRef.current.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -117,12 +124,7 @@ const CustomerList = () => {
     setError("");
 
     try {
-      const params = {
-        page: currentPage,
-        limit: LIMIT,
-        sortBy,
-        sortOrder,
-      };
+      const params = { page: currentPage, limit: LIMIT, sortBy, sortOrder };
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
 
       const response = await axiosClient.get("/api/admin/customers", {
@@ -175,17 +177,12 @@ const CustomerList = () => {
     setCurrentPage(1);
   };
 
-  // Pagination window: show up to 5 page buttons
   const pageWindow = () => {
     const total = pagination.totalPages;
     const cur = currentPage;
     const delta = 2;
     const range = [];
-    for (
-      let i = Math.max(1, cur - delta);
-      i <= Math.min(total, cur + delta);
-      i++
-    ) {
+    for (let i = Math.max(1, cur - delta); i <= Math.min(total, cur + delta); i++) {
       range.push(i);
     }
     return range;
@@ -225,18 +222,13 @@ const CustomerList = () => {
         <StatCard
           icon={<IndianRupee size={18} />}
           label="Page"
-          value={
-            loading
-              ? "—"
-              : `${currentPage} / ${pagination.totalPages || 1}`
-          }
+          value={loading ? "—" : `${currentPage} / ${pagination.totalPages || 1}`}
           color="emerald"
         />
       </div>
 
       {/* ── Controls ── */}
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        {/* Search */}
         <div className="relative flex-1 max-w-md">
           <Search
             size={16}
@@ -260,7 +252,6 @@ const CustomerList = () => {
           )}
         </div>
 
-        {/* Refresh */}
         <button
           onClick={() => fetchCustomers()}
           disabled={loading}
@@ -276,10 +267,7 @@ const CustomerList = () => {
         <div className="flex items-center gap-2 p-4 mb-5 rounded-lg bg-red-900/30 border border-red-800 text-red-300 text-sm">
           <AlertCircle size={16} className="shrink-0" />
           {error}
-          <button
-            onClick={fetchCustomers}
-            className="ml-auto underline hover:no-underline"
-          >
+          <button onClick={fetchCustomers} className="ml-auto underline hover:no-underline">
             Retry
           </button>
         </div>
@@ -291,40 +279,12 @@ const CustomerList = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-800 bg-gray-800/60">
-                <Th
-                  label="Customer"
-                  field="name"
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <Th
-                  label="Contact"
-                  field={null}
-                />
-                <Th
-                  label="Joined"
-                  field="createdAt"
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  onSort={handleSort}
-                />
-                <Th
-                  label="Orders"
-                  field="orderCount"
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  onSort={handleSort}
-                  align="right"
-                />
-                <Th
-                  label="Total Spent"
-                  field="totalSpent"
-                  sortBy={sortBy}
-                  sortOrder={sortOrder}
-                  onSort={handleSort}
-                  align="right"
-                />
+                <Th label="Customer" field="name" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
+                <Th label="Contact" field={null} />
+                <Th label="Joined" field="createdAt" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} />
+                <Th label="Orders" field="orderCount" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} align="right" />
+                <Th label="Total Spent" field="totalSpent" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} align="right" />
+                <Th label="Actions" field={null} align="center" />
               </tr>
             </thead>
 
@@ -332,7 +292,7 @@ const CustomerList = () => {
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-gray-800">
-                    {Array.from({ length: 5 }).map((__, j) => (
+                    {Array.from({ length: 6 }).map((__, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 rounded bg-gray-800 animate-pulse w-full" />
                       </td>
@@ -341,14 +301,8 @@ const CustomerList = () => {
                 ))
               ) : customers.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-16 text-center text-gray-500"
-                  >
-                    <UserCircle
-                      size={40}
-                      className="mx-auto mb-3 text-gray-700"
-                    />
+                  <td colSpan={6} className="px-4 py-16 text-center text-gray-500">
+                    <UserCircle size={40} className="mx-auto mb-3 text-gray-700" />
                     {debouncedSearch
                       ? `No customers found for "${debouncedSearch}"`
                       : "No customers yet."}
@@ -356,7 +310,14 @@ const CustomerList = () => {
                 </tr>
               ) : (
                 customers.map((customer) => (
-                  <CustomerRow key={customer._id} customer={customer} />
+                  <CustomerRow
+                    key={customer._id}
+                    customer={customer}
+                    onViewDetails={() => setDetailCustomerId(customer._id)}
+                    onViewOrders={() =>
+                      navigate(`/admin/customers/${customer._id}/orders`)
+                    }
+                  />
                 ))
               )}
             </tbody>
@@ -373,9 +334,7 @@ const CustomerList = () => {
                 {Math.min(currentPage * LIMIT, pagination.total)}
               </span>{" "}
               of{" "}
-              <span className="text-gray-300 font-medium">
-                {pagination.total}
-              </span>{" "}
+              <span className="text-gray-300 font-medium">{pagination.total}</span>{" "}
               customers
             </p>
 
@@ -412,9 +371,7 @@ const CustomerList = () => {
                   {currentPage < pagination.totalPages - 3 && (
                     <span className="px-1 text-gray-600 text-xs">…</span>
                   )}
-                  <PageBtn
-                    onClick={() => setCurrentPage(pagination.totalPages)}
-                  >
+                  <PageBtn onClick={() => setCurrentPage(pagination.totalPages)}>
                     {pagination.totalPages}
                   </PageBtn>
                 </>
@@ -431,6 +388,18 @@ const CustomerList = () => {
           </div>
         )}
       </div>
+
+      {/* ── Customer Detail Drawer ── */}
+      {detailCustomerId && (
+        <CustomerDetail
+          customerId={detailCustomerId}
+          onClose={() => setDetailCustomerId(null)}
+          onViewOrders={() => {
+            setDetailCustomerId(null);
+            navigate(`/admin/customers/${detailCustomerId}/orders`);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -444,9 +413,7 @@ const StatCard = ({ icon, label, value, color }) => {
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
   };
   return (
-    <div
-      className={`flex items-center gap-3 p-4 rounded-xl border ${colorMap[color]}`}
-    >
+    <div className={`flex items-center gap-3 p-4 rounded-xl border ${colorMap[color]}`}>
       <div className="shrink-0">{icon}</div>
       <div>
         <p className="text-xs text-gray-400">{label}</p>
@@ -459,19 +426,17 @@ const StatCard = ({ icon, label, value, color }) => {
 const Th = ({ label, field, sortBy, sortOrder, onSort, align = "left" }) => (
   <th
     className={`px-4 py-3 font-semibold text-xs uppercase tracking-wider text-gray-400 whitespace-nowrap select-none
-      ${align === "right" ? "text-right" : "text-left"}
+      ${align === "right" ? "text-right" : align === "center" ? "text-center" : "text-left"}
       ${field && onSort ? "cursor-pointer hover:text-white transition" : ""}
     `}
     onClick={field && onSort ? () => onSort(field) : undefined}
   >
     {label}
-    {field && onSort && (
-      <SortIcon field={field} sortBy={sortBy} sortOrder={sortOrder} />
-    )}
+    {field && onSort && <SortIcon field={field} sortBy={sortBy} sortOrder={sortOrder} />}
   </th>
 );
 
-const CustomerRow = ({ customer }) => {
+const CustomerRow = ({ customer, onViewDetails, onViewOrders }) => {
   const initials = getInitials(customer.name, customer.email);
   const color = avatarColor(customer._id);
 
@@ -548,6 +513,28 @@ const CustomerRow = ({ customer }) => {
         >
           {customer.totalSpent > 0 ? formatCurrency(customer.totalSpent) : "₹0"}
         </span>
+      </td>
+
+      {/* Actions */}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={onViewDetails}
+            title="View customer details"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-violet-500/20 border border-gray-700 hover:border-violet-500/40 text-gray-400 hover:text-violet-400 text-xs font-medium transition-all duration-150"
+          >
+            <Eye size={13} />
+            Details
+          </button>
+          <button
+            onClick={onViewOrders}
+            title="View customer orders"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-blue-500/20 border border-gray-700 hover:border-blue-500/40 text-gray-400 hover:text-blue-400 text-xs font-medium transition-all duration-150"
+          >
+            <ShoppingBag size={13} />
+            Orders
+          </button>
+        </div>
       </td>
     </tr>
   );

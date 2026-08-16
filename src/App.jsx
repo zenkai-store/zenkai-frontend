@@ -19,6 +19,7 @@ import ContactUs from "./pages/ContactUs";
 import Cart from "./pages/Cart";
 import OrderList from "./pages/order/OrderList";
 import CustomerList from "./pages/admin/customers/CustomerList";
+import CustomerOrders from "./pages/admin/customers/CustomerOrders";
 import Address from "./pages/user/Address";
 import Profile from "./pages/user/Profile";
 import OrderConfirmation from "./pages/order/OrderConfirmation";
@@ -116,6 +117,7 @@ function App() {
           <Route path="categories/list" element={<Categories />} />
           <Route path="orders/list" element={<OrderList />} />
           <Route path="customers/list" element={<CustomerList />} />
+          <Route path="customers/:userId/orders" element={<CustomerOrders />} />
         </Route>
 
         <Route
