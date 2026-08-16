@@ -18,6 +18,7 @@ import Wishlist from "./pages/order/Wishlist";
 import ContactUs from "./pages/ContactUs";
 import Cart from "./pages/Cart";
 import OrderList from "./pages/order/OrderList";
+import CustomerList from "./pages/admin/customers/CustomerList";
 import Address from "./pages/user/Address";
 import Profile from "./pages/user/Profile";
 import OrderConfirmation from "./pages/order/OrderConfirmation";
@@ -114,6 +115,7 @@ function App() {
           <Route path="featured/arrivals/list" element={<NewArrivals />} />
           <Route path="categories/list" element={<Categories />} />
           <Route path="orders/list" element={<OrderList />} />
+          <Route path="customers/list" element={<CustomerList />} />
         </Route>
 
         <Route

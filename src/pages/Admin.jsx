@@ -192,7 +192,7 @@ const Admin = () => {
     },
     {
       id: "users",
-      to: "/admin/users",
+      to: "/admin/customers/list",
       label: "Customers",
       icon: <Users size={20} />,
     },
