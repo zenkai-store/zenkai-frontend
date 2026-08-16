@@ -154,6 +154,8 @@ const Admin = () => {
       // Clear localStorage
       localStorage.removeItem("adminData");
       localStorage.removeItem("adminLoggedIn");
+      localStorage.removeItem("zenkai_admin_token");
+      localStorage.removeItem("mm_admin_token");
 
       // Clear cookie
       document.cookie =

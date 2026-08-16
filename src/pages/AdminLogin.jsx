@@ -41,6 +41,10 @@ const AdminLogin = () => {
 
       if (response.ok) {
         localStorage.setItem("adminLoggedIn", "true");
+        if (data.token) {
+          localStorage.setItem("zenkai_admin_token", data.token);
+          localStorage.setItem("mm_admin_token", data.token);
+        }
 
         if (data.admin) {
           localStorage.setItem("adminData", JSON.stringify(data.admin));

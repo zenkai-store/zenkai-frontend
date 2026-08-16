@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import BASEURL from "../../config/baseURL";
+import axiosClient from "../../api/axiosClient";
 import {
   Plus,
   Edit,
@@ -108,9 +107,8 @@ const Expenses = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${BASEURL}/api/admin/expenses`, {
+      const response = await axiosClient.get(`/api/admin/expenses`, {
         params: { page, limit: 20 },
-        withCredentials: true,
       });
 
       if (response.data.success) {
@@ -145,8 +143,8 @@ const Expenses = () => {
       setActionError("");
       setActionSuccess("");
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/expenses`,
+      const response = await axiosClient.post(
+        `/api/admin/expenses`,
         {
           title: formData.title.trim(),
           category: formData.category,
@@ -155,7 +153,6 @@ const Expenses = () => {
           paymentMethod: formData.paymentMethod,
           expenseDate: formData.expenseDate,
         },
-        { withCredentials: true },
       );
 
       if (response.data.success) {
@@ -187,8 +184,8 @@ const Expenses = () => {
       setActionError("");
       setActionSuccess("");
 
-      const response = await axios.put(
-        `${BASEURL}/api/admin/expenses/${selectedExpense._id}`,
+      const response = await axiosClient.put(
+        `/api/admin/expenses/${selectedExpense._id}`,
         {
           title: editFormData.title.trim(),
           category: editFormData.category,
@@ -197,7 +194,6 @@ const Expenses = () => {
           paymentMethod: editFormData.paymentMethod,
           expenseDate: editFormData.expenseDate,
         },
-        { withCredentials: true },
       );
 
       if (response.data.success) {
@@ -224,11 +220,8 @@ const Expenses = () => {
     try {
       setDeleting(true);
 
-      await axios.delete(
-        `${BASEURL}/api/admin/expenses/${selectedExpense._id}`,
-        {
-          withCredentials: true,
-        },
+      await axiosClient.delete(
+        `/api/admin/expenses/${selectedExpense._id}`,
       );
 
       setShowDeleteModal(false);

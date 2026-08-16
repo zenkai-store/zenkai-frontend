@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import axiosClient from "../../../api/axiosClient";
 import BASEURL from "../../../config/baseURL";
 import {
   ArrowLeft,
@@ -104,9 +105,7 @@ const NewArrivals = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${BASEURL}/api/admin/featured`, {
-        withCredentials: true,
-      });
+      const response = await axiosClient.get(`/api/admin/featured`);
 
       if (response.data.success) {
         setFeaturedProducts(response.data.data);
@@ -242,12 +241,9 @@ const NewArrivals = () => {
         (key) => payload[key] === undefined && delete payload[key],
       );
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/featured`,
+      const response = await axiosClient.post(
+        `/api/admin/featured`,
         payload,
-        {
-          withCredentials: true,
-        },
       );
 
       if (response.data.success) {
@@ -276,9 +272,8 @@ const NewArrivals = () => {
       setDeleting(true);
       setActionError("");
 
-      await axios.delete(
-        `${BASEURL}/api/admin/featured/${featuredId}/permanent`,
-        { withCredentials: true },
+      await axiosClient.delete(
+        `/api/admin/featured/${featuredId}/permanent`,
       );
 
       setActionSuccess("New arrival removed successfully!");

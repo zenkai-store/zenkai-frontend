@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import BASEURL from "../../../config/baseURL";
+import axiosClient from "../../../api/axiosClient";
 import {
   Plus,
   Edit,
@@ -70,9 +69,7 @@ const Categories = () => {
       setLoading(true);
       setError("");
 
-      const response = await axios.get(`${BASEURL}/api/admin/categories`, {
-        withCredentials: true,
-      });
+      const response = await axiosClient.get(`/api/admin/categories`);
 
       if (response.data.success) {
         setCategories(response.data.data || []);
@@ -103,8 +100,8 @@ const Categories = () => {
       setActionError("");
       setActionSuccess("");
 
-      const response = await axios.post(
-        `${BASEURL}/api/admin/categories`,
+      const response = await axiosClient.post(
+        `/api/admin/categories`,
         {
           name: formData.name.trim(),
           description: formData.description.trim(),
@@ -112,7 +109,6 @@ const Categories = () => {
             ? parseInt(formData.displayOrder)
             : categories.length + 1,
         },
-        { withCredentials: true },
       );
 
       if (response.data.success) {
@@ -146,8 +142,8 @@ const Categories = () => {
       setActionError("");
       setActionSuccess("");
 
-      const response = await axios.put(
-        `${BASEURL}/api/admin/categories/${selectedCategory._id}`,
+      const response = await axiosClient.put(
+        `/api/admin/categories/${selectedCategory._id}`,
         {
           name: editFormData.name.trim(),
           description: editFormData.description.trim(),
@@ -155,7 +151,6 @@ const Categories = () => {
             ? parseInt(editFormData.displayOrder)
             : selectedCategory.displayOrder,
         },
-        { withCredentials: true },
       );
 
       if (response.data.success) {
@@ -185,9 +180,8 @@ const Categories = () => {
       setDeleting(true);
       setActionError("");
 
-      await axios.delete(
-        `${BASEURL}/api/admin/categories/${selectedCategory._id}`,
-        { withCredentials: true },
+      await axiosClient.delete(
+        `/api/admin/categories/${selectedCategory._id}`,
       );
 
       setShowDeleteModal(false);
