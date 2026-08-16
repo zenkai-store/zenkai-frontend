@@ -118,6 +118,7 @@ const ProductsList = () => {
       onSalePrice: null,
     },
     quantity: "",
+    size: "1:24",
     media: [],
   });
 
@@ -456,6 +457,7 @@ const ProductsList = () => {
             : null,
         },
         quantity: Number(variantFormData.quantity) || 0,
+        size: variantFormData.size || "1:24",
         isOnSale:
           !!variantFormData.pricing.onSalePrice &&
           Number(variantFormData.pricing.onSalePrice) > 0,
@@ -510,6 +512,7 @@ const ProductsList = () => {
         onSalePrice: null,
       },
       quantity: "",
+      size: "1:24",
       media: [],
     });
     setCreateError("");
@@ -1237,6 +1240,9 @@ const ProductsList = () => {
                                         Color
                                       </th>
                                       <th className="py-2 px-3 text-left text-gray-400 text-xs font-medium">
+                                        Size
+                                      </th>
+                                      <th className="py-2 px-3 text-left text-gray-400 text-xs font-medium">
                                         Price
                                       </th>
                                       <th className="py-2 px-3 text-left text-gray-400 text-xs font-medium">
@@ -1293,6 +1299,15 @@ const ProductsList = () => {
                                                 {variant.color?.name}
                                               </span>
                                             </div>
+                                          </td>
+                                          <td className="py-3 px-3">
+                                            {variant.size ? (
+                                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+                                                {variant.size}
+                                              </span>
+                                            ) : (
+                                              <span className="text-gray-600 text-xs">—</span>
+                                            )}
                                           </td>
                                           <td className="py-3 px-3">
                                             <div>
@@ -2060,6 +2075,27 @@ const ProductsList = () => {
                     className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 transition font-mono"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Scale / Size
+                </label>
+                <select
+                  value={variantFormData.size}
+                  onChange={(e) =>
+                    setVariantFormData({
+                      ...variantFormData,
+                      size: e.target.value,
+                    })
+                  }
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                >
+                  <option value="1:16">1:16</option>
+                  <option value="1:24">1:24</option>
+                  <option value="1:32">1:32</option>
+                  <option value="1:64">1:64</option>
+                </select>
               </div>
 
               {/* Variant Media Upload */}

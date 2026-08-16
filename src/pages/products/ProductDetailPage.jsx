@@ -96,6 +96,7 @@ const ProductDetailPage = () => {
       onSalePrice: null,
     },
     quantity: "",
+    size: "1:24",
     isActive: true,
     isDefault: false,
     isOnSale: false,
@@ -115,6 +116,7 @@ const ProductDetailPage = () => {
       onSalePrice: null,
     },
     quantity: "",
+    size: "1:24",
     media: [],
   });
 
@@ -315,6 +317,7 @@ const ProductDetailPage = () => {
         onSalePrice: null,
       },
       quantity: "",
+      size: "1:24",
       media: [],
     });
     setActionError("");
@@ -457,6 +460,7 @@ const ProductDetailPage = () => {
           color: variantEditFormData.color,
           pricing: variantEditFormData.pricing,
           quantity: variantEditFormData.quantity,
+          size: variantEditFormData.size,
           isActive: variantEditFormData.isActive,
           isDefault: variantEditFormData.isDefault,
           isOnSale: variantEditFormData.isOnSale,
@@ -1254,6 +1258,9 @@ const ProductDetailPage = () => {
                     Color
                   </th>
                   <th className="py-4 px-4 text-left text-gray-400 text-xs font-semibold uppercase tracking-wider">
+                    Size
+                  </th>
+                  <th className="py-4 px-4 text-left text-gray-400 text-xs font-semibold uppercase tracking-wider">
                     Market Price
                   </th>
                   <th className="py-4 px-4 text-left text-gray-400 text-xs font-semibold uppercase tracking-wider">
@@ -1319,6 +1326,15 @@ const ProductDetailPage = () => {
                           {variant.color?.name}
                         </span>
                       </div>
+                    </td>
+                    <td className="py-4 px-4">
+                      {variant.size ? (
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+                          {variant.size}
+                        </span>
+                      ) : (
+                        <span className="text-gray-600">—</span>
+                      )}
                     </td>
                     <td className="py-4 px-4">
                       <span
@@ -1401,6 +1417,7 @@ const ProductDetailPage = () => {
                                   variant.pricing?.onSalePrice || null,
                               },
                               quantity: variant.quantity || "",
+                              size: variant.size || "1:24",
                               isActive: variant.isActive !== false,
                               isDefault: variant.isDefault || false,
                               isOnSale: variant.isOnSale || false,
@@ -1618,6 +1635,27 @@ const ProductDetailPage = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Scale / Size
+                </label>
+                <select
+                  value={variantFormData.size}
+                  onChange={(e) =>
+                    setVariantFormData({
+                      ...variantFormData,
+                      size: e.target.value,
+                    })
+                  }
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                >
+                  <option value="1:16">1:16</option>
+                  <option value="1:24">1:24</option>
+                  <option value="1:32">1:32</option>
+                  <option value="1:64">1:64</option>
+                </select>
               </div>
 
               <details className="group">
@@ -2496,6 +2534,27 @@ const ProductDetailPage = () => {
                 >
                   <option value="true">Yes</option>
                   <option value="false">No</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-gray-300 text-sm font-medium mb-2">
+                  Scale / Size
+                </label>
+                <select
+                  value={variantEditFormData.size}
+                  onChange={(e) =>
+                    setVariantEditFormData({
+                      ...variantEditFormData,
+                      size: e.target.value,
+                    })
+                  }
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500 transition"
+                >
+                  <option value="1:16">1:16</option>
+                  <option value="1:24">1:24</option>
+                  <option value="1:32">1:32</option>
+                  <option value="1:64">1:64</option>
                 </select>
               </div>
 

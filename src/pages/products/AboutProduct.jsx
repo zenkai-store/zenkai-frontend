@@ -732,6 +732,33 @@ const AboutProduct = () => {
               </div>
             )}
 
+            {/* Size / Scale Display */}
+            {product.variantSummary?.availableSizes?.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <Box size={16} className="text-gray-500" />
+                  Scale:{" "}
+                  <span className="text-gray-700 font-normal">
+                    {selectedVariant?.size || "—"}
+                  </span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.variantSummary.availableSizes.map((size) => (
+                    <span
+                      key={size}
+                      className={`inline-flex items-center px-4 py-2 rounded-xl text-sm font-semibold border transition ${
+                        selectedVariant?.size === size
+                          ? "bg-red-500 text-white border-red-500 shadow-md shadow-red-500/20"
+                          : "bg-gray-50 text-gray-700 border-gray-200"
+                      }`}
+                    >
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quantity Selector */}
             {!isOutOfStock && (
               <div>
@@ -971,6 +998,14 @@ const AboutProduct = () => {
                         {selectedVariant.color.name}
                       </span>
                     </div>
+                  </div>
+                )}
+                {selectedVariant?.size && (
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">Scale</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {selectedVariant.size}
+                    </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center py-2">
